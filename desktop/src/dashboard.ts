@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, screen } from 'electron';
 
 export class DashboardWindow {
   private window?: BrowserWindow;
@@ -15,9 +15,12 @@ export class DashboardWindow {
       return;
     }
 
+    // Open at ~80% of the work area so the console reads as a full app
+    // rather than a small floating card.
+    const wa = screen.getPrimaryDisplay().workAreaSize;
     this.window = new BrowserWindow({
-      width: 1280,
-      height: 840,
+      width: Math.min(1760, Math.max(1100, Math.round(wa.width * 0.8))),
+      height: Math.min(1080, Math.max(700, Math.round(wa.height * 0.8))),
       minWidth: 800,
       minHeight: 560,
       title: '1MCP Plus Console',

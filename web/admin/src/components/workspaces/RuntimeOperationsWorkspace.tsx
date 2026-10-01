@@ -72,7 +72,6 @@ export function DashboardWorkspace({
           label="Enabled servers"
           value={enabledServers(state.configuredServers)}
           tone="good"
-          icon="01"
           href="/admin/servers"
           onNavigate={() => navigate('servers')}
         />
@@ -80,7 +79,6 @@ export function DashboardWorkspace({
           label="Disabled servers"
           value={disabled}
           tone="warn"
-          icon="02"
           href="/admin/servers"
           onNavigate={() => navigate('servers')}
         />
@@ -88,7 +86,6 @@ export function DashboardWorkspace({
           label="OAuth attention"
           value={oauthAttention}
           tone={oauthAttention > 0 ? 'warn' : 'good'}
-          icon="03"
           href="/admin/oauth"
           onNavigate={() => navigate('oauth')}
         />
@@ -96,7 +93,6 @@ export function DashboardWorkspace({
           label="Failed audits"
           value={failedAudits}
           tone={failedAudits > 0 ? 'bad' : 'good'}
-          icon="04"
           href="/admin/audit"
           onNavigate={() => navigate('audit')}
         />
@@ -318,14 +314,12 @@ function SummaryLink({
   label,
   value,
   tone,
-  icon,
   href,
   onNavigate,
 }: {
   label: string;
   value: number;
   tone: 'good' | 'warn' | 'bad';
-  icon: string;
   href: string;
   onNavigate(): void;
 }) {
@@ -348,10 +342,7 @@ function SummaryLink({
           </Text>
           <Text className="summary-value">{value}</Text>
         </div>
-        <Stack gap={4} align="flex-end">
-          <Text className="summary-index">{icon}</Text>
-          <ArrowRight size={15} aria-hidden="true" />
-        </Stack>
+        <ArrowRight size={15} aria-hidden="true" />
       </Group>
     </Paper>
   );
