@@ -71,7 +71,7 @@ export function readProcessIdentity(pid: number): ProcessIdentity | undefined {
           ],
           {
             encoding: 'utf8',
-            timeout: 3000,
+            timeout: 10000,
             stdio: ['ignore', 'pipe', 'ignore'],
           },
         )

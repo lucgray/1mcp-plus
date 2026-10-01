@@ -1,7 +1,9 @@
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION, STREAMABLE_HTTP_ENDPOINT } from '@src/constants.js';
 import { AsyncLoadingOrchestrator } from '@src/core/capabilities/asyncLoadingOrchestrator.js';
 import { ServerManager } from '@src/core/server/serverManager.js';
+import { SchemaBoundaryError } from '@src/core/validation/schemaBoundary.js';
 import logger from '@src/logger/logger.js';
+import { ErrorCode } from '@src/sdk/contracts/index.js';
 import {
   getPresetName,
   getTagExpression,
@@ -252,6 +254,25 @@ export function setupStreamableHttpRoutes(
         }
       }
     } catch (error) {
+      const cause = error instanceof Error ? error.cause : undefined;
+      if (cause instanceof SchemaBoundaryError && cause.retryable) {
+        logWarn('HTTP error 503', {
+          method: req.method,
+          path: req.path,
+          sessionId: req.headers['mcp-session-id'] as string | undefined,
+          statusCode: 503,
+          phase: 'handleRequest',
+          reason: cause.code,
+        });
+        res.set('Retry-After', '2');
+        res.status(503).json({
+          error: {
+            code: ErrorCode.InternalError,
+            message: `Temporary admission failure (${cause.code}); retry the request`,
+          },
+        });
+        return;
+      }
       sendInternalError(res, error, {
         method: req.method,
         path: req.path,

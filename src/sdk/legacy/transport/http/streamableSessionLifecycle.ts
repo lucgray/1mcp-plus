@@ -378,7 +378,7 @@ export class StreamableSessionLifecycle {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to connect transport ${sessionId}:`, error);
-      throw new Error(`Session creation failed: connection error - ${errorMessage}`);
+      throw new Error(`Session creation failed: connection error - ${errorMessage}`, { cause: error });
     }
 
     let persisted = false;
