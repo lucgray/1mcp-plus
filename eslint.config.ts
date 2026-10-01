@@ -31,6 +31,8 @@ export default [
       'docs/.vitepress/cache',
       '.claude/**',
       '.agents/**',
+      // Desktop shell is a standalone package with its own tsconfig/tooling.
+      'desktop/**',
     ],
   },
   prettierConfig,
