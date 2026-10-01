@@ -18,6 +18,7 @@ import { Pencil, Plus, Search, ServerCog } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import type { ConfiguredServerReadModel, ConfiguredServerTargetIdentity } from '../api/adminApi';
+import { useI18n } from '../i18n';
 import type { AdminConsoleState, ServerMutation } from '../state/adminConsoleState';
 import { EmptyState, Panel } from './AdminConsoleShared';
 import {
@@ -49,6 +50,7 @@ export function ConfiguredServersPanel({
   onOpenServerDetail?: (server: ConfiguredServerTargetIdentity) => void | Promise<void>;
   onConfigureCustomServer?: () => void | Promise<void>;
 }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ServerFilter>('all');
   const [sourceFilter, setSourceFilter] = useState<ServerSourceFilter>('all');
@@ -64,8 +66,8 @@ export function ConfiguredServersPanel({
 
   return (
     <Panel
-      title="Server inventory"
-      utility={`${servers.length} of ${state.configuredServers.length} targets`}
+      title={t('servers.inventory')}
+      utility={t('servers.ofTargets', { shown: servers.length, total: state.configuredServers.length })}
       icon={<ServerCog size={17} />}
     >
       {!inventoryEmpty ? (
@@ -73,51 +75,51 @@ export function ConfiguredServersPanel({
           <TextInput
             className="server-search"
             leftSection={<Search size={16} />}
-            label="Search servers"
+            label={t('servers.search')}
             type="search"
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
           />
           <SegmentedControl
-            aria-label="Server status filter"
+            aria-label={t('servers.table.status')}
             value={filter}
             onChange={(value) => setFilter(value as ServerFilter)}
             data={[
-              { label: 'All', value: 'all' },
-              { label: 'Enabled', value: 'enabled' },
-              { label: 'Disabled', value: 'disabled' },
+              { label: t('servers.all'), value: 'all' },
+              { label: t('servers.enabled'), value: 'enabled' },
+              { label: t('servers.disabled'), value: 'disabled' },
             ]}
           />
           <SegmentedControl
-            aria-label="Server source filter"
+            aria-label={t('servers.search')}
             value={sourceFilter}
             onChange={(value) => setSourceFilter(value as ServerSourceFilter)}
             data={[
-              { label: 'Both', value: 'all' },
-              { label: 'Static', value: 'mcpServers' },
-              { label: 'Template', value: 'mcpTemplates' },
+              { label: t('servers.both'), value: 'all' },
+              { label: t('servers.static'), value: 'mcpServers' },
+              { label: t('servers.template'), value: 'mcpTemplates' },
             ]}
           />
           <Button leftSection={<Plus size={16} />} onClick={() => void onConfigureCustomServer?.()}>
-            Configure Custom Server
+            {t('servers.configureCustom')}
           </Button>
         </Group>
       ) : null}
       {inventoryEmpty ? (
         <Stack gap="sm" className="actionable-empty-state">
           <div>
-            <Text fw={800}>No servers configured</Text>
+            <Text fw={800}>{t('servers.emptyTitle')}</Text>
             <Text c="dimmed" size="sm">
-              Configure a target to start routing MCP capabilities and observing runtime activity.
+              {t('servers.emptyBody')}
             </Text>
           </div>
           <Button leftSection={<Plus size={16} />} onClick={() => void onConfigureCustomServer?.()}>
-            Configure server
+            {t('servers.configureServer')}
           </Button>
         </Stack>
       ) : servers.length === 0 ? (
         <Stack gap="sm" className="actionable-empty-state">
-          <EmptyState message="No servers match the current search and status filter." />
+          <EmptyState message={t('servers.noMatch')} />
           <Button
             variant="default"
             onClick={() => {
@@ -126,7 +128,7 @@ export function ConfiguredServersPanel({
               setSourceFilter('all');
             }}
           >
-            Clear filters
+            {t('servers.clearFilters')}
           </Button>
         </Stack>
       ) : compactLayout ? (
@@ -147,11 +149,11 @@ export function ConfiguredServersPanel({
             <Table className="admin-table" verticalSpacing="xs">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Server</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Transport</Table.Th>
-                  <Table.Th>Secrets</Table.Th>
-                  <Table.Th>Action</Table.Th>
+                  <Table.Th>{t('servers.table.server')}</Table.Th>
+                  <Table.Th>{t('servers.table.status')}</Table.Th>
+                  <Table.Th>{t('servers.table.transport')}</Table.Th>
+                  <Table.Th>{t('servers.table.secrets')}</Table.Th>
+                  <Table.Th>{t('servers.table.action')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -201,6 +203,7 @@ function ServerCard({
   onServerAction?: ServerActionHandler;
   onOpenServerDetail?: (server: ConfiguredServerTargetIdentity) => void | Promise<void>;
 }) {
+  const { t } = useI18n();
   const action = server.enabled ? 'disable' : 'enable';
   const busy = mutation?.state === 'busy';
   const tags = serverTags(server);
@@ -214,7 +217,7 @@ function ServerCard({
           <Group gap="xs">
             <Text fw={700}>{server.id}</Text>
             <Badge size="xs" variant="outline">
-              {server.source === 'mcpTemplates' ? 'Template' : 'Static'}
+              {server.source === 'mcpTemplates' ? t('servers.template') : t('servers.static')}
             </Badge>
             {server.definition?.authority && server.definition.authority !== 'sole' ? (
               <Badge size="xs" color={server.definition.authority === 'authoritative' ? 'teal' : 'yellow'}>
@@ -229,17 +232,17 @@ function ServerCard({
           ) : null}
         </div>
         <Badge color={server.enabled ? 'teal' : 'yellow'} variant="light">
-          {server.enabled ? 'enabled' : 'disabled'}
+          {server.enabled ? t('servers.enabledBadge') : t('servers.disabledBadge')}
         </Badge>
       </Group>
       <dl className="server-mobile-facts">
         <div>
-          <dt>Transport</dt>
+          <dt>{t('servers.table.transport')}</dt>
           <dd>{transportSummaryLabel(server)}</dd>
         </div>
         <div>
-          <dt>Secrets</dt>
-          <dd>{secretSummary(server)}</dd>
+          <dt>{t('servers.table.secrets')}</dt>
+          <dd>{secretSummary(server, t)}</dd>
         </div>
       </dl>
       {mutation?.message ? (
@@ -248,9 +251,9 @@ function ServerCard({
         </Text>
       ) : null}
       <Group gap="sm" justify="space-between" wrap="nowrap" className="server-mobile-actions">
-        <Tooltip label={`Edit ${server.id}`}>
+        <Tooltip label={t('servers.edit', { id: server.id })}>
           <ActionIcon
-            aria-label={`Edit ${server.source === 'mcpTemplates' ? 'template' : 'static'} ${server.id} server`}
+            aria-label={t('servers.edit', { id: server.id })}
             size="lg"
             variant="default"
             onClick={() => void onOpenServerDetail?.({ source: server.source, id: server.id })}
@@ -282,6 +285,7 @@ function ServerRow({
   onServerAction?: ServerActionHandler;
   onOpenServerDetail?: (server: ConfiguredServerTargetIdentity) => void | Promise<void>;
 }) {
+  const { t } = useI18n();
   const action = server.enabled ? 'disable' : 'enable';
   const busy = mutation?.state === 'busy';
   const tags = serverTags(server);
@@ -294,7 +298,7 @@ function ServerRow({
         <Group gap="xs">
           <Text fw={700}>{server.id}</Text>
           <Badge size="xs" variant="outline">
-            {server.source === 'mcpTemplates' ? 'Template' : 'Static'}
+            {server.source === 'mcpTemplates' ? t('servers.template') : t('servers.static')}
           </Badge>
           {server.definition?.authority && server.definition.authority !== 'sole' ? (
             <Badge size="xs" color={server.definition.authority === 'authoritative' ? 'teal' : 'yellow'}>
@@ -315,16 +319,16 @@ function ServerRow({
       </Table.Td>
       <Table.Td>
         <Badge color={server.enabled ? 'teal' : 'yellow'} variant="light">
-          {server.enabled ? 'enabled' : 'disabled'}
+          {server.enabled ? t('servers.enabledBadge') : t('servers.disabledBadge')}
         </Badge>
       </Table.Td>
       <Table.Td>{transportSummaryLabel(server)}</Table.Td>
-      <Table.Td>{secretSummary(server)}</Table.Td>
+      <Table.Td>{secretSummary(server, t)}</Table.Td>
       <Table.Td>
         <Group gap="sm" wrap="nowrap" justify="flex-end">
-          <Tooltip label={`Edit ${server.id}`}>
+          <Tooltip label={t('servers.edit', { id: server.id })}>
             <ActionIcon
-              aria-label={`Edit ${server.source === 'mcpTemplates' ? 'template' : 'static'} ${server.id} server`}
+              aria-label={t('servers.edit', { id: server.id })}
               size="lg"
               variant="default"
               onClick={() => void onOpenServerDetail?.({ source: server.source, id: server.id })}
@@ -361,9 +365,10 @@ function ServerStateControl({
   disabled: boolean;
   onChange(): void;
 }) {
+  const { t } = useI18n();
   return (
     <Group gap={7} wrap="nowrap" className="server-state-control">
-      {busy ? <Loader aria-label={`Updating ${server.id}`} size={14} /> : null}
+      {busy ? <Loader aria-label={t('servers.updating', { id: server.id })} size={14} /> : null}
       <Switch
         aria-label={actionLabel}
         checked={server.enabled}
@@ -373,7 +378,7 @@ function ServerStateControl({
         styles={{ input: { cursor: 'pointer', zIndex: 1 } }}
       />
       <Text className="server-state-label" size="xs" fw={700}>
-        {action === 'disable' ? 'Enabled' : 'Disabled'}
+        {action === 'disable' ? t('servers.enabled') : t('servers.disabled')}
       </Text>
     </Group>
   );

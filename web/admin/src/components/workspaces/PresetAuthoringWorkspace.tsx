@@ -22,6 +22,7 @@ import {
   type TagAuthoringState,
 } from '../../../../../src/domains/preset/tagAuthoring';
 import type { AdminPresetDraft, AdminPresetListItem, AdminPresetPreview, AdminPresetTarget } from '../../api/adminApi';
+import { useI18n } from '../../i18n';
 import type { PresetAuthoringModel } from '../../session/AdminConsoleSessionModel';
 
 export function PresetAuthoringWorkspace({
@@ -31,6 +32,7 @@ export function PresetAuthoringWorkspace({
   model: PresetAuthoringModel;
   runtimeScopeId?: string;
 }) {
+  const { t } = useI18n();
   const {
     items: presets,
     targets: presetTargets,
@@ -103,7 +105,7 @@ export function PresetAuthoringWorkspace({
       setStructuredConversion(next.structuredConversion);
       setMessage(null);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Preset preview failed.');
+      setMessage(error instanceof Error ? error.message : t('presets.previewFailed'));
     }
   }
 
@@ -113,7 +115,7 @@ export function PresetAuthoringWorkspace({
     const saved = await savePreset({ action, sourceName, preview });
     if (!saved) return;
     setPreview(null);
-    setMessage(`Preset ${preview.draft.name} saved.`);
+    setMessage(t('presets.saved', { name: preview.draft.name }));
   }
 
   return (
@@ -121,18 +123,18 @@ export function PresetAuthoringWorkspace({
       <Group justify="space-between" align="flex-start" className="workspace-heading">
         <div>
           <Text className="eyebrow" size="xs">
-            Runtime Scope / {runtimeScopeId ?? 'unavailable'}
+            {t('common.runtimeScope')} / {runtimeScopeId ?? t('common.unavailable')}
           </Text>
           <Title id="presets-title" order={2}>
-            Presets
+            {t('presets.title')}
           </Title>
           <Text c="dimmed" size="sm">
-            Manage the preset store owned by this running Runtime Scope.
+            {t('presets.description')}
           </Text>
         </div>
         <Group>
           <Button variant="default" onClick={() => void load()} loading={busy}>
-            Refresh
+            {t('common.refresh')}
           </Button>
           {presets.length > 0 ? (
             <Button
@@ -146,7 +148,7 @@ export function PresetAuthoringWorkspace({
                 setPreview(null);
               }}
             >
-              New preset
+              {t('presets.new')}
             </Button>
           ) : null}
         </Group>
@@ -163,11 +165,11 @@ export function PresetAuthoringWorkspace({
                     <div>
                       <Text fw={800}>{preset.name}</Text>
                       <Text size="sm" c="dimmed">
-                        {preset.description || 'No description'}
+                        {preset.description || t('presets.noDescription')}
                       </Text>
                       <Text size="xs">
-                        {preset.strategy.toUpperCase()} · {preset.querySummary || 'empty query'} · {preset.matchCount}{' '}
-                        matches
+                        {preset.strategy.toUpperCase()} · {preset.querySummary || t('presets.emptyQuery')} ·{' '}
+                        {t('presets.matchCount', { count: preset.matchCount })}
                       </Text>
                     </div>
                     <Group gap="xs">
@@ -184,7 +186,7 @@ export function PresetAuthoringWorkspace({
                         leftSection={<Trash2 size={14} />}
                         onClick={() => void deletePreset(preset.name)}
                       >
-                        Delete
+                        {t('presets.delete')}
                       </Button>
                     </Group>
                   </Group>
@@ -195,20 +197,20 @@ export function PresetAuthoringWorkspace({
         ) : null}
         <Paper withBorder p="md">
           <Stack gap="sm">
-            <Title order={3}>{sourceName ? `Edit ${sourceName}` : 'Create preset'}</Title>
+            <Title order={3}>{sourceName ? t('presets.editName', { name: sourceName }) : t('presets.create')}</Title>
             <TextInput
-              label="Preset name"
+              label={t('presets.name')}
               value={name}
               disabled={Boolean(sourceName && sourceName === name)}
               onChange={(event) => {
                 setName(event.currentTarget.value);
                 setPreview(null);
               }}
-              error={nameError ?? undefined}
-              description="Use letters, numbers, hyphens, or underscores; maximum 50 characters."
+              error={nameError ? t(`presets.${nameError}`) : undefined}
+              description={t('presets.nameHint')}
             />
             <TextInput
-              label="Description"
+              label={t('presets.descriptionLabel')}
               value={description}
               onChange={(event) => {
                 setDescription(event.currentTarget.value);
@@ -230,7 +232,7 @@ export function PresetAuthoringWorkspace({
                   setPreview(null);
                 }}
               >
-                Match any included tag
+                {t('presets.matchAny')}
               </Button>
               <Button
                 variant={strategy === 'and' ? 'filled' : 'default'}
@@ -246,7 +248,7 @@ export function PresetAuthoringWorkspace({
                   setPreview(null);
                 }}
               >
-                Match all included tags
+                {t('presets.matchAll')}
               </Button>
               <Button
                 variant={strategy === 'advanced' ? 'filled' : 'default'}
@@ -259,16 +261,14 @@ export function PresetAuthoringWorkspace({
                   setPreview(null);
                 }}
               >
-                Advanced JSON
+                {t('presets.advancedJson')}
               </Button>
             </Group>
             {strategy === 'advanced' ? (
               <Textarea
-                label="Advanced JSON"
+                label={t('presets.advancedJson')}
                 minRows={8}
-                error={
-                  !advancedJsonValid ? 'Advanced JSON must be a valid object before previewing matches.' : undefined
-                }
+                error={!advancedJsonValid ? t('presets.advancedInvalid') : undefined}
                 value={advanced}
                 onChange={(event) => {
                   const value = event.currentTarget.value;
@@ -312,8 +312,7 @@ export function PresetAuthoringWorkspace({
             )}
             {presets.length === 0 ? (
               <Alert color="blue" variant="light">
-                Create the first preset for this Runtime Scope. An empty tag query is allowed and will be shown as a
-                warning.
+                {t('presets.firstPresetHint')}
               </Alert>
             ) : null}
             <Button
@@ -321,11 +320,11 @@ export function PresetAuthoringWorkspace({
               disabled={previewDisabled}
               onClick={() => void createPreview()}
             >
-              Preview matches
+              {t('presets.previewMatches')}
             </Button>
             {preview ? (
               <Paper withBorder p="sm">
-                <Text fw={800}>{preview.matchCount} current matches</Text>
+                <Text fw={800}>{t('presets.currentMatches', { count: preview.matchCount })}</Text>
                 {preview.validation.globalErrors.map((error) => (
                   <Text key={error} c="red">
                     {error}
@@ -338,12 +337,13 @@ export function PresetAuthoringWorkspace({
                 ))}
                 {preview.validation.warnings.map((warning) => (
                   <Text key={warning} c="yellow">
-                    {operatorPresetMessage(warning)}
+                    {localizedPresetMessage(warning, t)}
                   </Text>
                 ))}
                 {preview.matches.map((match) => (
                   <Text key={match.name} size="sm">
-                    {match.matched ? '✓' : '–'} {match.name} · {match.enabled ? 'enabled' : 'disabled'} · {match.reason}
+                    {match.matched ? '✓' : '–'} {match.name} ·{' '}
+                    {match.enabled ? t('common.enabled') : t('common.disabled')} · {match.reason}
                   </Text>
                 ))}
                 <Button
@@ -352,11 +352,11 @@ export function PresetAuthoringWorkspace({
                   leftSection={<Save size={16} />}
                   onClick={() => void save()}
                 >
-                  Confirm and save
+                  {t('presets.confirmSave')}
                 </Button>
               </Paper>
             ) : null}
-            {message ? <Alert>{operatorPresetMessage(message)}</Alert> : null}
+            {message ? <Alert>{localizedPresetMessage(message, t)}</Alert> : null}
           </Stack>
         </Paper>
       </div>
@@ -365,9 +365,9 @@ export function PresetAuthoringWorkspace({
 }
 
 function presetNameError(name: string): string | null {
-  if (!name.trim()) return 'Enter a preset name before previewing matches.';
-  if (name.length > 50) return 'Preset name must be 50 characters or less.';
-  if (!/^[a-zA-Z0-9_-]+$/.test(name)) return 'Use only letters, numbers, hyphens, and underscores.';
+  if (!name.trim()) return 'presetNameRequired';
+  if (name.length > 50) return 'presetNameTooLong';
+  if (!/^[a-zA-Z0-9_-]+$/.test(name)) return 'presetNameInvalid';
   return null;
 }
 
@@ -380,10 +380,13 @@ function isObjectJson(value: string): boolean {
   }
 }
 
-function operatorPresetMessage(message: string): string {
-  if (/name: Preset name is required/i.test(message)) return 'Enter a preset name before previewing matches.';
+function localizedPresetMessage(
+  message: string,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  if (/name: Preset name is required/i.test(message)) return t('presets.nameRequired');
   if (/Tag query produces no meaningful filter/i.test(message)) {
-    return 'No tag criteria selected; this preset will not filter servers.';
+    return t('presets.noCriteria');
   }
   return message;
 }
@@ -399,6 +402,7 @@ function TagMatrix({
   states: Record<string, TagAuthoringState>;
   onChange: (states: Record<string, TagAuthoringState>) => void;
 }) {
+  const { t } = useI18n();
   const catalog = tagCatalog(targets, states);
   const query = buildTagAuthoringQuery(states, strategy);
   const matchingServers = targets.filter((server) => evaluateTagAuthoringQuery(query, server.tags));
@@ -428,33 +432,33 @@ function TagMatrix({
       <Group justify="space-between" align="flex-start" gap="md" className="preset-tag-header">
         <div>
           <Title id="preset-tag-matrix-title" order={4}>
-            Tag matrix
+            {t('presets.tagMatrix')}
           </Title>
           <Text size="sm" c="dimmed">
-            Discover tags from configured targets. Include tags select servers; exclude tags remove them.
+            {t('presets.tagMatrixHint')}
           </Text>
         </div>
         <Badge variant="light" color={matchingServers.length > 0 ? 'teal' : 'yellow'}>
-          {matchingServers.length} / {targets.length} match
+          {t('presets.matrixMatch', { matched: matchingServers.length, total: targets.length })}
         </Badge>
       </Group>
       <Group align="flex-end" gap="sm" mt="md" className="preset-tag-toolbar">
         <TextInput
-          aria-label="Search tags and servers"
+          aria-label={t('presets.searchTagsAria')}
           className="preset-tag-search"
-          label="Search tags"
+          label={t('presets.searchTags')}
           leftSection={<Search size={16} />}
-          placeholder="Tag or server name"
+          placeholder={t('presets.searchPlaceholder')}
           type="search"
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}
         />
         <SegmentedControl
-          aria-label="Filter tags by state"
+          aria-label={t('presets.filterTagsAria')}
           data={[
-            { label: 'All', value: 'all' },
-            { label: 'Included', value: 'include' },
-            { label: 'Excluded', value: 'exclude' },
+            { label: t('presets.all'), value: 'all' },
+            { label: t('presets.included'), value: 'include' },
+            { label: t('presets.excluded'), value: 'exclude' },
           ]}
           value={filter}
           onChange={(value) => setFilter(value as typeof filter)}
@@ -472,30 +476,30 @@ function TagMatrix({
                   <Text fw={800}>{tag}</Text>
                   {!discovered ? (
                     <Badge color="gray" size="xs" variant="light">
-                      Retired
+                      {t('presets.retired')}
                     </Badge>
                   ) : null}
                 </Group>
                 <Group gap="sm" mt={3} className="preset-tag-counts">
                   <Text size="xs" c="dimmed">
-                    {servers.length} {servers.length === 1 ? 'server' : 'servers'}
+                    {t('presets.serverCount', { count: servers.length })}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    {enabledCount} enabled
+                    {t('presets.enabledCount', { count: enabledCount })}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    {disabledCount} disabled
+                    {t('presets.disabledCount', { count: disabledCount })}
                   </Text>
                 </Group>
               </div>
-              <div className="preset-tag-state" role="group" aria-label={`${tag} tag state`}>
+              <div className="preset-tag-state" role="group" aria-label={t('presets.tagStateAria', { tag })}>
                 <SegmentedControl
-                  aria-label={`Set ${tag} tag state`}
+                  aria-label={t('presets.setTagState', { tag })}
                   fullWidth
                   data={[
-                    { label: 'Neutral', value: 'neutral' },
-                    { label: 'Include', value: 'include' },
-                    { label: 'Exclude', value: 'exclude' },
+                    { label: t('presets.neutral'), value: 'neutral' },
+                    { label: t('presets.include'), value: 'include' },
+                    { label: t('presets.exclude'), value: 'exclude' },
                   ]}
                   value={state}
                   onChange={(value) => setTagState(tag, value as TagAuthoringState)}
@@ -503,19 +507,19 @@ function TagMatrix({
               </div>
               <div className="preset-tag-servers">
                 <Text size="xs" c="dimmed" component="span">
-                  {visibleServers.length > 0 ? visibleServers.join(', ') : 'No current targets'}
+                  {visibleServers.length > 0 ? visibleServers.join(', ') : t('presets.noCurrentTargets')}
                 </Text>
                 {servers.length > 2 ? (
                   <Button
                     aria-expanded={expanded}
-                    aria-label={`${expanded ? 'Collapse' : 'Show all'} servers tagged ${tag}`}
+                    aria-label={expanded ? t('presets.collapseTagged', { tag }) : t('presets.showTagged', { tag })}
                     className="preset-tag-expand"
                     rightSection={<ChevronDown className={expanded ? 'rotate-180' : undefined} size={13} />}
                     size="compact-xs"
                     variant="subtle"
                     onClick={() => setExpandedTags((current) => ({ ...current, [tag]: !expanded }))}
                   >
-                    {expanded ? 'Collapse' : `+${servers.length - 2}`}
+                    {expanded ? t('presets.collapse') : `+${servers.length - 2}`}
                   </Button>
                 ) : null}
               </div>
@@ -524,7 +528,7 @@ function TagMatrix({
         })}
         {visibleCatalog.length === 0 ? (
           <Text c="dimmed" className="preset-tag-empty">
-            {catalog.length === 0 ? 'No configured target tags are available.' : 'No tags match the current search.'}
+            {catalog.length === 0 ? t('presets.noTagsAvailable') : t('presets.noTagsMatch')}
           </Text>
         ) : null}
       </Stack>
@@ -532,31 +536,36 @@ function TagMatrix({
         <Group justify="space-between" align="flex-start" gap="md" className="preset-impact-header">
           <div>
             <Text size="xs" fw={800} tt="uppercase">
-              Live impact
+              {t('presets.liveImpact')}
             </Text>
             <Text size="sm" mt={3}>
-              <strong>{matchingServers.length}</strong> of {targets.length} targets match · {enabledMatches} enabled ·{' '}
-              {disabledMatches} disabled
+              {t('presets.impactSummary', {
+                matched: matchingServers.length,
+                total: targets.length,
+                enabled: enabledMatches,
+                disabled: disabledMatches,
+              })}
             </Text>
           </div>
           <Group gap={6} className="preset-active-tags">
-            {activeTags.length === 0 ? <Text c="dimmed">No criteria selected</Text> : null}
+            {activeTags.length === 0 ? <Text c="dimmed">{t('presets.noCriteriaSelected')}</Text> : null}
             {activeTags.map(({ tag }) => (
               <Badge key={tag} color={states[tag] === 'exclude' ? 'red' : 'teal'} variant="light">
-                {states[tag] === 'exclude' ? 'EXCLUDE' : 'INCLUDE'} {tag}
+                {states[tag] === 'exclude' ? t('presets.excludeUpper') : t('presets.includeUpper')} {tag}
               </Badge>
             ))}
           </Group>
         </Group>
         <details className="preset-impact-details">
-          <summary>View target evaluation</summary>
+          <summary>{t('presets.viewEvaluation')}</summary>
           <Stack gap={3} mt="xs">
             {targets.map((server) => {
               const matched = matchingServers.some((candidate) => candidate.name === server.name);
               return (
                 <Text key={server.name} size="xs" c={matched ? undefined : 'dimmed'}>
-                  {matched ? 'Match' : 'No match'} · {server.name} · {server.enabled ? 'enabled' : 'disabled'} ·{' '}
-                  {server.tags.join(', ') || 'untagged'}
+                  {matched ? t('presets.match') : t('presets.noMatch')} · {server.name} ·{' '}
+                  {server.enabled ? t('common.enabled') : t('common.disabled')} ·{' '}
+                  {server.tags.join(', ') || t('presets.untagged')}
                 </Text>
               );
             })}

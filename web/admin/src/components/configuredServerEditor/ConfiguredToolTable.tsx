@@ -16,6 +16,7 @@ import { RefreshCw, RotateCcw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import type { ConfiguredToolInventory } from '../../api/adminApi';
+import { type I18n, useI18n } from '../../i18n';
 
 type ToolDraft = Record<string, { enabled: boolean; descriptionOverride: string }>;
 type ToolFilter = 'all' | 'enabled' | 'disabled' | 'unresolved';
@@ -41,6 +42,7 @@ export function ConfiguredToolTable({
   onModelChange(model: string): void | Promise<void>;
   onRefresh(): void | Promise<void>;
 }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ToolFilter>('all');
   const visibleRows = useMemo(() => {
@@ -75,7 +77,7 @@ export function ConfiguredToolTable({
     }
     return { disabled: disabledCount, enabledTokens };
   }, [draft, inventory.rows]);
-  const inspectionMessage = configuredToolInspectionMessage(inventory, refreshError);
+  const inspectionMessage = configuredToolInspectionMessage(inventory, refreshError, t);
   const inspectionFacts = configuredToolInspectionFacts(inventory);
   const retryable = Boolean(refreshError) || inventory.inspection?.retryable === true;
 
@@ -83,10 +85,13 @@ export function ConfiguredToolTable({
     <Stack className="configured-tool-table" gap="sm">
       <Group justify="space-between" align="flex-end">
         <div>
-          <Text fw={800}>Configured Tool Selection</Text>
+          <Text fw={800}>{t('tools.title')}</Text>
           <Text c="dimmed" size="xs">
-            {inventory.counts.observed} observed, {draftSummary.disabled} disabled, {inventory.counts.unresolved}{' '}
-            unresolved
+            {t('tools.counts', {
+              observed: inventory.counts.observed,
+              disabled: draftSummary.disabled,
+              unresolved: inventory.counts.unresolved,
+            })}
           </Text>
           {inspectionMessage ? (
             <div
@@ -122,11 +127,11 @@ export function ConfiguredToolTable({
             disabled={disabled || refreshBusy}
             onClick={() => void onRefresh()}
           >
-            {retryable ? 'Retry' : 'Refresh'}
+            {retryable ? t('common.retry') : t('common.refresh')}
           </Button>
           <Select
-            label="Estimate model"
-            aria-label="Token estimate model"
+            label={t('tools.estimateModel')}
+            aria-label={t('tools.estimateModelAria')}
             value={inventory.model}
             data={modelOptions}
             allowDeselect={false}
@@ -139,26 +144,26 @@ export function ConfiguredToolTable({
       </Group>
       <Group align="flex-end" grow>
         <TextInput
-          label="Search tools"
+          label={t('tools.searchTools')}
           leftSection={<Search size={15} />}
           value={query}
           onChange={(event) => setQuery(event.currentTarget.value)}
         />
         <SegmentedControl
-          aria-label="Tool status filter"
+          aria-label={t('tools.statusFilterAria')}
           value={filter}
           onChange={(value) => setFilter(value as ToolFilter)}
           data={[
-            { label: 'All', value: 'all' },
-            { label: 'Enabled', value: 'enabled' },
-            { label: 'Disabled', value: 'disabled' },
-            { label: 'Unresolved', value: 'unresolved' },
+            { label: t('servers.all'), value: 'all' },
+            { label: t('servers.enabled'), value: 'enabled' },
+            { label: t('servers.disabled'), value: 'disabled' },
+            { label: t('tools.unresolved'), value: 'unresolved' },
           ]}
         />
       </Group>
       <Group justify="space-between">
         <Text c="dimmed" size="xs">
-          {visibleRows.length} visible tools, approximately {draftSummary.enabledTokens} enabled tokens
+          {t('tools.visibleSummary', { count: visibleRows.length, tokens: draftSummary.enabledTokens })}
         </Text>
         <Group gap="xs">
           <Button
@@ -167,7 +172,7 @@ export function ConfiguredToolTable({
             disabled={disabled || visibleNames.length === 0}
             onClick={() => onBulkChange(visibleNames, true)}
           >
-            Enable visible ({visibleNames.length})
+            {t('tools.enableVisible', { count: visibleNames.length })}
           </Button>
           <Button
             size="compact-xs"
@@ -175,7 +180,7 @@ export function ConfiguredToolTable({
             disabled={disabled || visibleNames.length === 0}
             onClick={() => onBulkChange(visibleNames, false)}
           >
-            Disable visible ({visibleNames.length})
+            {t('tools.disableVisible', { count: visibleNames.length })}
           </Button>
         </Group>
       </Group>
@@ -191,26 +196,26 @@ export function ConfiguredToolTable({
                 <div className="configured-tool-identity">
                   <Group gap="xs">
                     <Text fw={700}>{row.name}</Text>
-                    {row.stale ? <Badge color="orange">last observed</Badge> : null}
-                    {row.unresolved ? <Badge color="yellow">unresolved</Badge> : null}
+                    {row.stale ? <Badge color="orange">{t('tools.lastObserved')}</Badge> : null}
+                    {row.unresolved ? <Badge color="yellow">{t('tools.unresolvedBadge')}</Badge> : null}
                     {row.observedInSomeInstances ? (
                       <Badge variant="outline">
-                        {row.observedInstanceCount}/{row.activeInstanceCount} instances
+                        {t('tools.instances', { observed: row.observedInstanceCount, active: row.activeInstanceCount })}
                       </Badge>
                     ) : null}
-                    <Badge variant="outline">~{row.approximateTokens} tokens</Badge>
+                    <Badge variant="outline">~{t('tools.tokens', { count: row.approximateTokens })}</Badge>
                   </Group>
                   <Text c="dimmed" size="xs">
-                    {row.effectiveDescription ?? 'No upstream description'}
+                    {row.effectiveDescription ?? t('tools.noDescription')}
                   </Text>
                   {row.descriptionOverridden && row.upstreamDescription ? (
                     <Text c="dimmed" size="xs">
-                      Upstream: {row.upstreamDescription}
+                      {t('tools.upstream')} {row.upstreamDescription}
                     </Text>
                   ) : null}
                 </div>
                 <Switch
-                  aria-label={`Enable ${row.name}`}
+                  aria-label={t('tools.enableTool', { name: row.name })}
                   checked={rowDraft.enabled}
                   disabled={disabled}
                   onChange={(event) => onToolChange(row.name, { enabled: event.currentTarget.checked })}
@@ -219,15 +224,15 @@ export function ConfiguredToolTable({
               <Group mt="xs" align="flex-end" wrap="nowrap">
                 <TextInput
                   className="configured-tool-description-input"
-                  label="Description override"
-                  placeholder={row.upstreamDescription ?? 'Add a description'}
+                  label={t('tools.descriptionOverride')}
+                  placeholder={row.upstreamDescription ?? t('tools.addDescription')}
                   value={rowDraft.descriptionOverride}
                   disabled={disabled}
                   onChange={(event) => onToolChange(row.name, { descriptionOverride: event.currentTarget.value })}
                 />
-                <Tooltip label="Reset to upstream description">
+                <Tooltip label={t('tools.resetUpstream')}>
                   <ActionIcon
-                    aria-label={`Reset ${row.name} description`}
+                    aria-label={t('tools.resetDescription', { name: row.name })}
                     variant="default"
                     disabled={disabled || !rowDraft.descriptionOverride}
                     onClick={() => onToolChange(row.name, { descriptionOverride: '' })}
@@ -242,11 +247,11 @@ export function ConfiguredToolTable({
       </div>
       {inventory.targetEnabled ? null : (
         <Text c="yellow" size="xs">
-          This target is disabled. Tool changes will take effect when the target is enabled.
+          {t('tools.targetDisabled')}
         </Text>
       )}
       <Text c="dimmed" size="xs">
-        Selection uses a denylist. Tools discovered later are enabled unless explicitly disabled.
+        {t('tools.denylistHint')}
       </Text>
     </Stack>
   );
@@ -266,30 +271,29 @@ function configuredToolInspectionFacts(
 
 function configuredToolInspectionMessage(
   inventory: ConfiguredToolInventory,
-  refreshError?: string,
+  refreshError: string | undefined,
+  t: I18n['t'],
 ): string | undefined {
   if (refreshError) return refreshError;
   const inspection = inventory.inspection;
-  if (inspection?.status === 'in_progress') return 'Refreshing live tool inventory from connected instances.';
+  if (inspection?.status === 'in_progress') return t('tools.refreshing');
   if (inspection?.status === 'complete' && inventory.freshness === 'live') return undefined;
   switch (inspection?.reason) {
     case 'target_disabled':
-      return 'This target is disabled, so live tool inventory cannot be refreshed.';
+      return t('tools.reasonTargetDisabled');
     case 'target_disconnected':
-      return 'This configured server is disconnected. Reconnect it before refreshing live tool inventory.';
+      return t('tools.reasonDisconnected');
     case 'no_active_instances':
-      return 'This Template Server has no active instances to inspect.';
+      return t('tools.reasonNoInstances');
     case 'active_instance_unavailable':
-      return 'An active instance became unavailable before its tools could be inspected.';
+      return t('tools.reasonInstanceUnavailable');
     case 'inspection_failed':
-      return 'Live tool inspection failed for one or more active instances.';
+      return t('tools.reasonInspectionFailed');
     case 'snapshot_unavailable':
-      return 'No complete live tool snapshot is available yet.';
+      return t('tools.reasonNoSnapshot');
     case 'active_instances_changed':
-      return 'The active instance set changed during inspection. Retry to inspect the current instances.';
+      return t('tools.reasonInstancesChanged');
     default:
-      return inventory.freshness === 'unavailable'
-        ? 'Live inventory is unavailable. Rows may come from the last complete snapshot or stored configuration.'
-        : undefined;
+      return inventory.freshness === 'unavailable' ? t('tools.reasonUnavailable') : undefined;
   }
 }

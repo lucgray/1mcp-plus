@@ -13,6 +13,7 @@ import {
 } from '../../configuredServerEdit/configuredServerEditDraft';
 import type { ConfiguredServerEditModel } from '../../configuredServerEdit/useConfiguredServerEdit';
 import { configuredServerApplyEligibility } from '../../configuredServerEdit/useConfiguredServerEdit';
+import { useI18n } from '../../i18n';
 import { EmptyState, Panel } from '../AdminConsoleShared';
 import { transportSummaryLabel } from '../adminConsoleUtils';
 import { ConfiguredToolTable } from './ConfiguredToolTable';
@@ -26,6 +27,7 @@ export function ConfiguredServerEditor({
   model: ConfiguredServerEditModel;
   deleteModel: ConfiguredServerDeleteModel;
 }) {
+  const { t } = useI18n();
   const { state } = model;
   const advancedSettingsRef = useRef<HTMLDetailsElement>(null);
   const hasAdvancedPreviewErrors =
@@ -44,11 +46,11 @@ export function ConfiguredServerEditor({
 
   if (state.status === 'list') {
     return (
-      <Panel title="Edit server" utility="select a target" icon={<Pencil size={17} />}>
+      <Panel title={t('edit.title')} utility={t('edit.selectTarget')} icon={<Pencil size={17} />}>
         <Stack className="edit-empty-state" gap="xs">
-          <Text fw={700}>Select Edit server to change target settings.</Text>
+          <Text fw={700}>{t('edit.selectHint')}</Text>
           <Text c="dimmed" size="sm">
-            Edit fields -&gt; Preview change -&gt; Review result
+            {t('edit.flow')}
           </Text>
         </Stack>
       </Panel>
@@ -57,15 +59,15 @@ export function ConfiguredServerEditor({
 
   if (state.status === 'loading') {
     return (
-      <Panel title="Server detail" utility={state.serverId} icon={<ServerCog size={17} />}>
-        <EmptyState message="Loading server detail." />
+      <Panel title={t('edit.serverDetail')} utility={state.serverId} icon={<ServerCog size={17} />}>
+        <EmptyState message={t('edit.loadingDetail')} />
       </Panel>
     );
   }
 
   if (state.status === 'committed' || state.status === 'committedRefreshFailed') {
     return (
-      <Panel title="Server detail" utility={state.serverId} icon={<ServerCog size={17} />}>
+      <Panel title={t('edit.serverDetail')} utility={state.serverId} icon={<ServerCog size={17} />}>
         <Stack gap="sm">
           <Alert color="teal" role="status">
             {state.success}
@@ -76,21 +78,21 @@ export function ConfiguredServerEditor({
             </Alert>
           ) : null}
           {state.status === 'committed' ? (
-            <EmptyState message="Refreshing the committed server detail." />
+            <EmptyState message={t('edit.refreshingCommitted')} />
           ) : (
             <Alert color="yellow" role="status">
               {state.message}
             </Alert>
           )}
           <Text c="dimmed" size="sm">
-            Editing stays unavailable until the runtime returns a fresh server detail model.
+            {t('edit.editingUnavailable')}
           </Text>
           <Group>
             {state.status === 'committedRefreshFailed' ? (
-              <Button onClick={() => void model.open(state.serverId)}>Retry detail</Button>
+              <Button onClick={() => void model.open(state.serverId)}>{t('edit.retryDetail')}</Button>
             ) : null}
             <Button variant="default" onClick={() => void model.close('/admin/servers')}>
-              Back to servers
+              {t('common.backToServers')}
             </Button>
           </Group>
         </Stack>
@@ -100,15 +102,12 @@ export function ConfiguredServerEditor({
 
   if (state.status === 'missing') {
     return (
-      <Panel title="Server detail" utility={state.serverId} icon={<ServerCog size={17} />}>
+      <Panel title={t('edit.serverDetail')} utility={state.serverId} icon={<ServerCog size={17} />}>
         <Stack gap="sm">
-          <Title order={3}>Server target not found</Title>
-          <Text c="dimmed">
-            {state.serverId} is no longer available. It may have been renamed or removed. Return to the list, refresh,
-            and open the current target ID if a rename succeeded.
-          </Text>
+          <Title order={3}>{t('edit.notFound')}</Title>
+          <Text c="dimmed">{t('edit.notFoundBody', { id: state.serverId })}</Text>
           <Alert color="yellow" variant="light">
-            Old detail URLs are not aliases. Use the server list after a rename instead of bookmarking the previous ID.
+            {t('edit.notFoundHint')}
           </Alert>
           <Button variant="default" onClick={() => model.close('/admin/servers')}>
             Back to servers
@@ -120,14 +119,13 @@ export function ConfiguredServerEditor({
 
   if (state.status === 'failed') {
     return (
-      <Panel title="Server detail" utility={state.serverId} icon={<ServerCog size={17} />}>
+      <Panel title={t('edit.serverDetail')} utility={state.serverId} icon={<ServerCog size={17} />}>
         <Stack gap="sm">
           <Alert color="red" role="alert">
             {state.message}
           </Alert>
           <Text c="dimmed" size="sm">
-            Refresh the console or return to the server list, then retry. Preserve any non-secret request ID from the
-            error when asking for support.
+            {t('edit.failedHint')}
           </Text>
           <Button variant="default" onClick={() => model.close('/admin/servers')}>
             Back to servers
@@ -182,7 +180,7 @@ export function ConfiguredServerEditor({
                 variant="subtle"
                 onClick={() => model.changeTransportOverride(overrideKey, !overrideCleared)}
               >
-                {overrideCleared ? 'Restore override' : 'Clear override'}
+                {overrideCleared ? t('edit.restoreOverride') : t('edit.clearOverride')}
               </Button>
             ) : null}
           </Group>
@@ -193,22 +191,22 @@ export function ConfiguredServerEditor({
 
   return (
     <Panel
-      title="Edit server"
-      utility={state.detail.server.enabled ? 'enabled' : 'disabled'}
+      title={t('edit.title')}
+      utility={state.detail.server.enabled ? t('common.enabled') : t('common.disabled')}
       icon={<Pencil size={17} />}
     >
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start">
           <div>
             <Text className="eyebrow" size="xs">
-              Configured Server Target
+              {t('create.target')}
             </Text>
             <Group gap="xs" align="center">
               <Title order={2}>{state.detail.server.id}</Title>
               <Badge color={state.detail.server.enabled ? 'teal' : 'yellow'} variant="light">
-                {state.detail.server.enabled ? 'enabled' : 'disabled'}
+                {state.detail.server.enabled ? t('servers.enabledBadge') : t('servers.disabledBadge')}
               </Badge>
-              <Badge variant="outline">{templateTarget ? 'Template' : 'Static'}</Badge>
+              <Badge variant="outline">{templateTarget ? t('servers.template') : t('servers.static')}</Badge>
               {state.detail.server.definition?.authority && state.detail.server.definition.authority !== 'sole' ? (
                 <Badge color={state.detail.server.definition.authority === 'authoritative' ? 'teal' : 'yellow'}>
                   {state.detail.server.definition.authority}
@@ -220,33 +218,31 @@ export function ConfiguredServerEditor({
             </Text>
             <Text c="dimmed" size="xs">
               {state.detail.server.definition?.qualifiedId ?? `${state.detail.server.source}/${state.detail.server.id}`}{' '}
-              · Draft changes stay local until preview.
+              · {t('edit.draftLocal')}
             </Text>
           </div>
           <Button variant="default" onClick={() => model.close('/admin/servers')}>
-            Back
+            {t('common.back')}
           </Button>
         </Group>
         {templateTarget ? (
           <Paper className="edit-section" withBorder>
             <Stack gap="xs">
               <Group justify="space-between">
-                <Text fw={800}>Template definition</Text>
+                <Text fw={800}>{t('edit.templateDefinition')}</Text>
                 <Badge variant="outline">
-                  {state.detail.server.runtime?.activeInstanceCount ?? 0} active instance
-                  {(state.detail.server.runtime?.activeInstanceCount ?? 0) === 1 ? '' : 's'}
+                  {t('edit.activeInstances', { count: state.detail.server.runtime?.activeInstanceCount ?? 0 })}
                 </Badge>
               </Group>
               <Text size="sm" c="dimmed">
-                This is a definition, not a live instance. Rename or structural changes retire active instances;
-                metadata-only changes retain them. Future matching requests recreate retired instances lazily.
+                {t('edit.templateDefinitionHint')}
               </Text>
               <Text size="sm">
-                Request Context variables:{' '}
-                {state.detail.server.templateAnalysis?.unresolvedVariables.join(', ') || 'none'}
+                {t('edit.requestContextVars')}{' '}
+                {state.detail.server.templateAnalysis?.unresolvedVariables.join(', ') || t('common.none')}
               </Text>
               {state.detail.server.templateAnalysis?.syntax.valid === false ? (
-                <Alert color="red">Template syntax is invalid. Preview lists each affected field.</Alert>
+                <Alert color="red">{t('edit.templateSyntaxInvalid')}</Alert>
               ) : null}
             </Stack>
           </Paper>
@@ -258,10 +254,10 @@ export function ConfiguredServerEditor({
                 <div>
                   <Text fw={800}>{group.label}</Text>
                   <Text c="dimmed" size="xs">
-                    {editGroupHelp(group.id)}
+                    {editGroupHelp(group.id, t)}
                   </Text>
                 </div>
-                <Badge variant="outline">{group.fields.length} fields</Badge>
+                <Badge variant="outline">{t('common.fieldCount', { count: group.fields.length })}</Badge>
               </Group>
               {group.fields.map(renderField)}
             </Stack>
@@ -284,10 +280,10 @@ export function ConfiguredServerEditor({
         ) : null}
         {advancedFields.length > 0 ? (
           <details ref={advancedSettingsRef} className="advanced-settings">
-            <summary>Advanced settings</summary>
+            <summary>{t('common.advancedSettings')}</summary>
             <Stack gap="sm" mt="sm">
               <Text c="dimmed" size="xs">
-                Timeouts use milliseconds. Prefer Connection Timeout and Request Timeout over Deprecated Timeout.
+                {t('common.timeoutHint')}
               </Text>
               {advancedFields.map(renderField)}
             </Stack>
@@ -297,30 +293,32 @@ export function ConfiguredServerEditor({
           <Stack gap="xs">
             <Group justify="space-between" align="flex-start">
               <div>
-                <Text fw={800}>Server instructions</Text>
+                <Text fw={800}>{t('edit.serverInstructions')}</Text>
                 <Text c="dimmed" size="xs">
-                  Choose whether clients receive upstream instructions, an operator replacement, or no instructions.
+                  {t('edit.serverInstructionsHint')}
                 </Text>
               </div>
               <Badge variant="outline">
-                Effective:{' '}
-                {state.instructionOverride.mode === 'replace' ? 'replacement' : state.instructionOverride.mode}
+                {t('edit.effective')}{' '}
+                {state.instructionOverride.mode === 'replace'
+                  ? t('edit.effectiveReplacement')
+                  : state.instructionOverride.mode}
               </Badge>
             </Group>
             <SegmentedControl
               fullWidth
-              aria-label="Instruction override outcome"
+              aria-label={t('edit.instructionOverrideAria')}
               value={state.instructionOverride.mode}
               onChange={(value) => model.changeInstructionOverride(value as 'upstream' | 'replace' | 'suppress')}
               data={[
-                { value: 'upstream', label: 'Use upstream' },
-                { value: 'replace', label: 'Replace' },
-                { value: 'suppress', label: 'Suppress' },
+                { value: 'upstream', label: t('edit.useUpstream') },
+                { value: 'replace', label: t('edit.replace') },
+                { value: 'suppress', label: t('edit.suppress') },
               ]}
             />
             {state.instructionOverride.mode === 'replace' ? (
               <Textarea
-                label="Replacement instructions"
+                label={t('edit.replacementInstructions')}
                 minRows={5}
                 value={state.instructionOverride.value}
                 onChange={(event) => model.changeInstructionOverride('replace', event.currentTarget.value)}
@@ -328,8 +326,8 @@ export function ConfiguredServerEditor({
             ) : (
               <Text size="sm" className="instruction-override-readonly">
                 {state.instructionOverride.mode === 'upstream'
-                  ? 'Upstream state is preserved. Effective instructions are resolved when the server connects.'
-                  : 'Effective instructions are an intentional empty value.'}
+                  ? t('edit.upstreamPreserved')
+                  : t('edit.suppressedEmpty')}
               </Text>
             )}
           </Stack>
@@ -337,11 +335,10 @@ export function ConfiguredServerEditor({
         <Group className="draft-action-bar" justify="space-between" gap="sm">
           <div>
             <Badge color={state.dirty ? 'yellow' : 'gray'} variant={state.dirty ? 'light' : 'outline'}>
-              {state.dirty ? 'Unsaved changes' : 'No changes yet'}
+              {state.dirty ? t('instr.unsaved') : t('edit.noChanges')}
             </Badge>
             <Text c="dimmed" size="xs">
-              Preview validates the draft without writing config. Leaving this page with unsaved changes asks for
-              confirmation.
+              {t('edit.previewHint')}
             </Text>
           </div>
           <Group gap="xs">
@@ -350,7 +347,7 @@ export function ConfiguredServerEditor({
               disabled={!state.dirty || state.previewBusy || state.applyBusy || state.toolInventoryBusy}
               onClick={() => void model.preview('auto')}
             >
-              Preview change
+              {t('edit.previewChange')}
             </Button>
             {state.preview && !templateTarget ? (
               <Button
@@ -359,7 +356,7 @@ export function ConfiguredServerEditor({
                 disabled={state.applyBusy || state.toolInventoryBusy}
                 onClick={() => void model.preview('manual')}
               >
-                Rerun connectivity
+                {t('common.rerunConnectivity')}
               </Button>
             ) : null}
           </Group>
@@ -398,7 +395,7 @@ export function ConfiguredServerEditor({
                 disabled={!applyEligibility.eligible || state.applyBusy || state.toolInventoryBusy}
                 onClick={() => void model.apply()}
               >
-                Apply changes
+                {t('edit.applyChanges')}
               </Button>
             </Group>
             <PreviewResult preview={state.preview} />

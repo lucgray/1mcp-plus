@@ -2,6 +2,7 @@ import { Alert, Badge, Code, Group, Paper, SimpleGrid, Stack, Text } from '@mant
 
 import type { ConfiguredServerCreatePreviewResponse, ConfiguredServerPreviewResponse } from '../../api/adminApi';
 import { fieldKey, formatPreviewValue } from '../../configuredServerEdit/configuredServerEditDraft';
+import { useI18n } from '../../i18n';
 import { DetailRow } from '../AdminConsoleShared';
 import { connectivityMeta, connectivitySummary, riskFlagColor, riskFlagLabel } from '../adminConsoleUtils';
 
@@ -10,6 +11,7 @@ export function PreviewResult({
 }: {
   preview: ConfiguredServerPreviewResponse['preview'] | ConfiguredServerCreatePreviewResponse['preview'];
 }) {
+  const { t } = useI18n();
   const connectivity = preview.connectivityCheck;
   const validationTone = preview.validation.status === 'valid' ? 'teal' : 'red';
   const connectivityTone =
@@ -22,66 +24,66 @@ export function PreviewResult({
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start">
           <div>
-            <Text fw={800}>Preview result</Text>
+            <Text fw={800}>{t('preview.title')}</Text>
             <Text c="dimmed" size="xs">
-              Domain facts only. No config has been written.
+              {t('preview.domainFacts')}
             </Text>
           </div>
           <Code className="preview-fingerprint">{preview.previewFingerprint}</Code>
         </Group>
         <Alert color="blue" variant="light">
-          Preview only - no config has been written.
+          {t('preview.noWrite')}
         </Alert>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
           <DetailRow
-            label="Target"
+            label={t('preview.target')}
             value={preview.targetName}
-            meta={`Proposed: ${preview.proposedTargetName ?? preview.targetName}`}
+            meta={t('preview.proposed', { name: preview.proposedTargetName ?? preview.targetName })}
           />
           <DetailRow
-            label="Validation"
+            label={t('preview.validation')}
             value={preview.validation.status}
             meta={
               preview.validation.errors.length > 0
-                ? `${preview.validation.errors.length} field issue${preview.validation.errors.length === 1 ? '' : 's'}`
-                : 'Ready to apply after confirmation'
+                ? t('preview.fieldIssues', { count: preview.validation.errors.length })
+                : t('preview.readyToApply')
             }
           />
           <DetailRow
-            label="Config change"
+            label={t('preview.configChange')}
             value={preview.configChange.status}
-            meta={`${preview.configChange.operation} / ${preview.configChange.changed ? 'changed' : 'unchanged'}`}
+            meta={`${preview.configChange.operation} / ${preview.configChange.changed ? t('preview.changed') : t('preview.unchanged')}`}
           />
           {'expectedReload' in preview ? (
             <DetailRow
-              label="Expected reload"
-              value="Checked after creation"
-              meta="The runtime reports the reload outcome after configuration is written."
+              label={t('preview.expectedReload')}
+              value={t('preview.checkedAfterCreation')}
+              meta={t('preview.reloadReportedAfterWrite')}
             />
           ) : (
             <DetailRow
-              label="Reload"
+              label={t('preview.reload')}
               value={preview.configChange.reload.status}
               meta={preview.configChange.reload.error}
             />
           )}
           <DetailRow
-            label="Backup"
-            value={preview.configChange.backup.created ? 'created' : 'not created'}
+            label={t('preview.backup')}
+            value={preview.configChange.backup.created ? t('preview.backupCreated') : t('preview.backupNotCreated')}
             meta={preview.configChange.backup.path}
           />
           <Paper className={`connectivity-card connectivity-${connectivity.status}`} withBorder>
             <Stack gap={4}>
               <Group justify="space-between" gap="xs">
-                <Text fw={700}>{structuralTemplatePreview ? 'Runtime contact' : 'Connectivity'}</Text>
+                <Text fw={700}>
+                  {structuralTemplatePreview ? t('preview.runtimeContact') : t('preview.connectivity')}
+                </Text>
                 <Badge color={connectivityTone} variant="light">
                   {connectivity.status}
                 </Badge>
               </Group>
               <Text size="sm">
-                {structuralTemplatePreview
-                  ? 'Skipped. Template preview is structural and does not contact a backend.'
-                  : connectivitySummary(connectivity)}
+                {structuralTemplatePreview ? t('preview.structuralSkipped') : connectivitySummary(connectivity)}
               </Text>
               {connectivityMeta(preview) ? (
                 <Text c="dimmed" size="xs">
@@ -94,24 +96,24 @@ export function PreviewResult({
         {preview.templateAnalysis ? (
           <Stack gap="xs">
             <Group gap="xs">
-              <Text fw={800}>Template structure</Text>
+              <Text fw={800}>{t('preview.templateStructure')}</Text>
               <Badge color={preview.templateAnalysis.syntax.valid ? 'teal' : 'red'} variant="light">
-                {preview.templateAnalysis.syntax.valid ? 'valid syntax' : 'invalid syntax'}
+                {preview.templateAnalysis.syntax.valid ? t('preview.validSyntax') : t('preview.invalidSyntax')}
               </Badge>
             </Group>
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
               <DetailRow
-                label="Request Context variables"
-                value={preview.templateAnalysis.variables.join(', ') || 'none'}
-                meta="Names only; values are never loaded or rendered during preview."
+                label={t('preview.requestContextVars')}
+                value={preview.templateAnalysis.variables.join(', ') || t('common.none')}
+                meta={t('preview.namesOnly')}
               />
               <DetailRow
-                label="Runtime instances"
-                value={`${preview.runtimeImpact?.activeInstanceCount ?? 0} active`}
+                label={t('preview.runtimeInstances')}
+                value={t('preview.activeCount', { count: preview.runtimeImpact?.activeInstanceCount ?? 0 })}
                 meta={
                   preview.runtimeImpact?.retirementRequired
-                    ? 'Active instances retire after apply and successful reload.'
-                    : 'Preview and creation do not create an instance.'
+                    ? t('preview.instancesRetire')
+                    : t('preview.noInstanceCreated')
                 }
               />
             </SimpleGrid>
@@ -120,46 +122,49 @@ export function PreviewResult({
         {preview.toolSelection ? (
           <Stack gap="xs">
             <Group gap="xs">
-              <Text fw={800}>Tool impact</Text>
+              <Text fw={800}>{t('preview.toolImpact')}</Text>
               <Badge variant="outline">{preview.toolSelection.model}</Badge>
             </Group>
             <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xs">
               <DetailRow
-                label="Selection"
-                value={`${preview.toolSelection.counts.enabled} enabled / ${preview.toolSelection.counts.disabled} disabled`}
-                meta={`${preview.toolSelection.counts.unresolved} unresolved`}
+                label={t('preview.selection')}
+                value={t('preview.enabledDisabled', {
+                  enabled: preview.toolSelection.counts.enabled,
+                  disabled: preview.toolSelection.counts.disabled,
+                })}
+                meta={t('preview.unresolvedCount', { count: preview.toolSelection.counts.unresolved })}
               />
               <DetailRow
-                label="Approximate tokens"
-                value={`${preview.toolSelection.approximateTokens.before} to ${preview.toolSelection.approximateTokens.after}`}
-                meta={`Savings: ${preview.toolSelection.approximateTokens.savings}`}
+                label={t('preview.approxTokens')}
+                value={`${preview.toolSelection.approximateTokens.before} → ${preview.toolSelection.approximateTokens.after}`}
+                meta={t('preview.savings', { count: preview.toolSelection.approximateTokens.savings })}
               />
               <DetailRow
-                label="Runtime effect"
-                value={preview.toolSelection.effect === 'immediate' ? 'Immediate' : 'Deferred'}
-                meta={`${preview.toolSelection.changedTools.length} changed tools`}
+                label={t('preview.runtimeEffect')}
+                value={preview.toolSelection.effect === 'immediate' ? t('preview.immediate') : t('preview.deferred')}
+                meta={t('preview.changedTools', { count: preview.toolSelection.changedTools.length })}
               />
             </SimpleGrid>
             {preview.toolSelection.requiresZeroEnabledConfirmation ? (
               <Alert color="red" role="alert">
-                Applying this preview disables every currently observed tool.
+                {t('preview.disablesAllTools')}
               </Alert>
             ) : null}
           </Stack>
         ) : null}
         {preview.configChange.warnings?.map((warning) => (
-          <DetailRow key={`warning:${warning}`} label="Warning" value={warning} />
+          <DetailRow key={`warning:${warning}`} label={t('preview.warning')} value={warning} />
         ))}
         {preview.warnings?.map((warning) => (
-          <DetailRow key={`preview-warning:${warning}`} label="Preview warning" value={warning} />
+          <DetailRow key={`preview-warning:${warning}`} label={t('preview.previewWarning')} value={warning} />
         ))}
         {preview.configChange.retentionCleanup.warnings.map((warning) => (
-          <DetailRow key={`retention:${warning}`} label="Retention warning" value={warning} />
+          <DetailRow key={`retention:${warning}`} label={t('preview.retentionWarning')} value={warning} />
         ))}
         {preview.validation.errors.length > 0 ? (
           <Stack gap="xs">
             <Group gap="xs">
-              <Text fw={800}>Validation issues</Text>
+              <Text fw={800}>{t('preview.validationIssues')}</Text>
               <Badge color={validationTone} variant="light">
                 {preview.validation.errors.length}
               </Badge>
@@ -177,10 +182,8 @@ export function PreviewResult({
         {preview.diff.length > 0 ? (
           <Stack gap="xs">
             <Group gap="xs">
-              <Text fw={800}>Redacted diff</Text>
-              <Badge variant="outline">
-                {preview.diff.length} change{preview.diff.length === 1 ? '' : 's'}
-              </Badge>
+              <Text fw={800}>{t('preview.redactedDiff')}</Text>
+              <Badge variant="outline">{t('preview.changeCount', { count: preview.diff.length })}</Badge>
             </Group>
             {preview.diff.map((entry) => (
               <Paper key={fieldKey(entry.fieldPath)} className="preview-diff-entry" withBorder>
@@ -202,12 +205,12 @@ export function PreviewResult({
                   </Group>
                   <Text size="sm">
                     <Text span c="dimmed">
-                      from{' '}
+                      {t('preview.from')}{' '}
                     </Text>
                     {formatPreviewValue(entry.oldValue)}
                     <Text span c="dimmed">
                       {' '}
-                      to{' '}
+                      {t('preview.to')}{' '}
                     </Text>
                     {formatPreviewValue(entry.newValue)}
                   </Text>
@@ -217,7 +220,7 @@ export function PreviewResult({
           </Stack>
         ) : (
           <Text c="dimmed" size="sm">
-            No field-level changes were reported by preview.
+            {t('preview.noFieldChanges')}
           </Text>
         )}
       </Stack>

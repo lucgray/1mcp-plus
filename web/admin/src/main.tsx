@@ -4,6 +4,7 @@ import '@mantine/core/styles.css';
 import { createRoot } from 'react-dom/client';
 
 import { createAdminApi } from './api/adminApi';
+import { I18nProvider } from './i18n';
 import { AdminConsoleRoot } from './session/AdminConsoleSession';
 import './styles.css';
 import { adminConsoleTheme } from './theme';
@@ -17,6 +18,8 @@ if (!root) {
 
 createRoot(root).render(
   <MantineProvider theme={adminConsoleTheme} defaultColorScheme="auto" colorSchemeManager={colorSchemeManager}>
-    <AdminConsoleRoot api={createAdminApi()} />
+    <I18nProvider>
+      <AdminConsoleRoot api={createAdminApi()} />
+    </I18nProvider>
   </MantineProvider>,
 );

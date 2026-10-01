@@ -135,35 +135,14 @@ input {
   color: #f3f5f2;
 }
 
-.brand-mark {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--admin-teal);
-  color: white;
-  font-weight: 900;
-}
-
-.command-eyebrow {
-  color: var(--admin-muted);
-}
-
 .runtime-live {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 9px;
-  border: 1px solid #cfe0d9;
-  border-radius: 6px;
-  background: #edf7f2;
   color: #246653;
 }
 
 [data-mantine-color-scheme='dark'] .runtime-live {
-  border-color: #356b58;
-  background: var(--admin-teal-soft);
   color: #a8dcc8;
 }
 
@@ -172,7 +151,6 @@ input {
   height: 7px;
   border-radius: 50%;
   background: #2c9b70;
-  box-shadow: 0 0 0 3px rgba(44, 155, 112, 0.14);
 }
 
 .operator-identity {
@@ -225,7 +203,6 @@ input {
 .nav-item-active {
   background: var(--admin-graphite-soft);
   color: #ffffff;
-  box-shadow: inset 3px 0 0 var(--admin-teal);
 }
 
 .nav-runtime-card {
@@ -264,9 +241,8 @@ input {
 }
 
 .admin-console {
-  width: min(1560px, 100%);
-  margin: 0 auto;
-  padding: 26px 28px 36px;
+  width: 100%;
+  padding: 26px clamp(28px, 3vw, 72px) 36px;
 }
 
 .eyebrow,
@@ -567,14 +543,11 @@ input {
 .summary-link {
   color: inherit;
   text-decoration: none;
-  transition:
-    border-color 120ms ease,
-    transform 120ms ease;
+  transition: border-color 120ms ease;
 }
 
 .summary-link:hover {
   border-color: var(--admin-teal);
-  transform: translateY(-1px);
 }
 
 .summary-link:focus-visible {
@@ -636,13 +609,6 @@ input {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-}
-
-.summary-index {
-  color: rgba(23, 32, 29, 0.28);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  font-weight: 800;
 }
 
 .summary-good {
@@ -1081,7 +1047,6 @@ input {
     padding-inline: 12px !important;
   }
 
-  .command-eyebrow,
   .runtime-live,
   .global-view-badge,
   .operator-name {
