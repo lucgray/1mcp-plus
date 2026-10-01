@@ -1,0 +1,56 @@
+{
+  "name": "@1mcp/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Desktop tray app for the 1MCP agent runtime",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "electron .",
+    "dev": "tsc -p tsconfig.json && electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.3.3"
+  },
+  "build": {
+    "appId": "app.1mcp.desktop",
+    "productName": "1MCP",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "renderer/**",
+      "assets/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../1mcp",
+        "to": "1mcp",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility"
+    },
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    }
+  }
+}

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
+<title>1MCP</title>
+<style>
+  :root {
+    --bg: #16181d;
+    --panel: #1e2128;
+    --border: #2c313c;
+    --text: #e8eaf0;
+    --muted: #9aa3b2;
+    --green: #4cc38a;
+    --yellow: #e5b567;
+    --red: #e5534b;
+    --blue: #6aa9ff;
+    --gray: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font: 13px/1.45 -apple-system, 'Segoe UI', 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px 10px;
+    -webkit-app-region: drag;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--gray); flex: none; }
+  .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.starting, .dot.stopping { background: var(--yellow); }
+  .dot.failed { background: var(--red); }
+  .title { font-weight: 600; font-size: 14px; }
+  .state { color: var(--muted); font-size: 12px; }
+  .spacer { flex: 1; }
+  .endpoint {
+    padding: 0 14px 10px;
+    color: var(--blue);
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+  .meta { color: var(--muted); font-size: 11px; padding: 0 14px 8px; display: flex; gap: 12px; }
+  .chips { display: flex; gap: 6px; padding: 0 14px 10px; flex-wrap: wrap; }
+  .chip {
+    padding: 2px 8px; border-radius: 10px; font-size: 11px;
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted);
+  }
+  .chip b { color: var(--text); font-weight: 600; }
+  .chip.ok b { color: var(--green); }
+  .chip.bad b { color: var(--red); }
+  .chip.wait b { color: var(--yellow); }
+  .servers {
+    flex: 1; overflow-y: auto; padding: 4px 14px 10px;
+    border-top: 1px solid var(--border);
+  }
+  .server {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 2px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .server:last-child { border-bottom: none; }
+  .server .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pill {
+    font-size: 10px; padding: 1px 7px; border-radius: 8px; flex: none;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .pill.ready { background: rgba(76,195,138,.15); color: var(--green); }
+  .pill.loading, .pill.pending { background: rgba(229,181,103,.15); color: var(--yellow); }
+  .pill.failed { background: rgba(229,83,75,.15); color: var(--red); }
+  .pill.awaitingoauth { background: rgba(106,169,255,.15); color: var(--blue); }
+  .pill.cancelled { background: rgba(107,114,128,.15); color: var(--gray); }
+  .server .err {
+    flex-basis: 100%; color: var(--red); font-size: 11px; padding-left: 18px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .server { flex-wrap: wrap; }
+  .empty { color: var(--muted); text-align: center; padding: 24px 8px; font-size: 12px; }
+  .logs {
+    max-height: 90px; overflow-y: auto; margin: 0 14px 8px;
+    padding: 6px 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; color: var(--muted);
+    white-space: pre-wrap; word-break: break-all;
+  }
+  footer {
+    display: flex; gap: 6px; padding: 10px 14px;
+    border-top: 1px solid var(--border);
+  }
+  button {
+    flex: 1; padding: 6px 0; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text); font-size: 12px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: #262b34; border-color: #3a4150; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.danger { color: var(--red); }
+</style>
+</head>
+<body>
+  <header>
+    <span class="dot" id="dot"></span>
+    <span class="title">1MCP</span>
+    <span class="state" id="state">—</span>
+    <span class="spacer"></span>
+    <span class="state" id="version"></span>
+  </header>
+  <div class="endpoint" id="endpoint"></div>
+  <div class="meta"><span id="uptime"></span><span id="degraded"></span></div>
+  <div class="chips" id="chips"></div>
+  <div class="servers" id="servers"><div class="empty">Loading…</div></div>
+  <div class="logs" id="logs" style="display:none"></div>
+  <footer>
+    <button id="btnConsole">Console</button>
+    <button id="btnToggle">Start</button>
+    <button id="btnRestart">Restart</button>
+    <button id="btnQuit" class="danger">Quit</button>
+  </footer>
+
+<script>
+  const api = window.oneMcpDesktop;
+  const $ = (id) => document.getElementById(id);
+
+  const STATE_TEXT = {
+    stopped: 'Stopped', starting: 'Starting…', running: 'Running',
+    stopping: 'Stopping…', failed: 'Failed',
+  };
+
+  function fmtUptime(sec) {
+    if (sec == null) return '';
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
+    return 'uptime ' + (h > 0 ? h + 'h ' : '') + (m > 0 || h > 0 ? m + 'm ' : '') + s + 's';
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function render(snap) {
+    if (!snap) return;
+    $('dot').className = 'dot ' + snap.state;
+    $('state').textContent = STATE_TEXT[snap.state] || snap.state;
+    $('endpoint').textContent = snap.endpoint || '';
+    $('version').textContent = snap.health && snap.health.version ? 'v' + snap.health.version : '';
+    $('uptime').textContent = snap.health && snap.health.system ? fmtUptime(snap.health.system.uptime) : '';
+    $('degraded').textContent = snap.mcp && snap.mcp.degraded ? 'degraded' : '';
+    $('degraded').style.color = 'var(--yellow)';
+
+    const sum = (snap.mcp && snap.mcp.summary) || {};
+    const chips = [];
+    chips.push(`<span class="chip ok">ready <b>${sum.ready || 0}</b></span>`);
+    if (sum.loading) chips.push(`<span class="chip wait">loading <b>${sum.loading}</b></span>`);
+    if (sum.pending) chips.push(`<span class="chip wait">pending <b>${sum.pending}</b></span>`);
+    if (sum.failed) chips.push(`<span class="chip bad">failed <b>${sum.failed}</b></span>`);
+    if (sum.awaitingOAuth) chips.push(`<span class="chip">oauth <b>${sum.awaitingOAuth}</b></span>`);
+    chips.push(`<span class="chip">total <b>${sum.total || 0}</b></span>`);
+    $('chips').innerHTML = chips.join('');
+
+    const details = (snap.mcp && snap.mcp.servers && snap.mcp.servers.details) || {};
+    const names = Object.keys(details).sort();
+    if (names.length === 0) {
+      $('servers').innerHTML =
+        snap.state === 'running'
+          ? '<div class="empty">No MCP servers configured.<br>Add one with <code>1mcp mcp add</code>.</div>'
+          : '<div class="empty">Server is not running.</div>';
+    } else {
+      $('servers').innerHTML = names
+        .map((name) => {
+          const d = details[name];
+          const st = String(d.state || 'pending').toLowerCase();
+          const err = d.error ? `<div class="err" title="${esc(d.error)}">${esc(d.error)}</div>` : '';
+          const prog = d.progress ? ` · ${esc(d.progress)}` : '';
+          return `<div class="server"><span class="name" title="${esc(name)}">${esc(name)}${prog}</span><span class="pill ${st}">${esc(st)}</span>${err}</div>`;
+        })
+        .join('');
+    }
+
+    const tail = snap.logTail || [];
+    const showLogs = snap.state === 'failed' || (snap.state !== 'running' && tail.length > 0);
+    $('logs').style.display = showLogs ? 'block' : 'none';
+    if (showLogs) {
+      const lines = tail.slice(-8);
+      if (snap.error) lines.unshift('[error] ' + snap.error);
+      $('logs').textContent = lines.join('\n');
+      $('logs').scrollTop = $('logs').scrollHeight;
+    }
+
+    $('btnToggle').textContent = snap.state === 'running' || snap.state === 'starting' ? 'Stop' : 'Start';
+    $('btnToggle').dataset.target = snap.state === 'running' || snap.state === 'starting' ? 'stop' : 'start';
+    $('btnRestart').disabled = snap.state !== 'running';
+    $('btnConsole').disabled = snap.state !== 'running';
+  }
+
+  $('btnConsole').addEventListener('click', () => api.control('open-dashboard'));
+  $('btnToggle').addEventListener('click', (e) => api.control(e.currentTarget.dataset.target || 'start'));
+  $('btnRestart').addEventListener('click', () => api.control('restart'));
+  $('btnQuit').addEventListener('click', () => api.control('quit'));
+
+  api.onStatus(render);
+  api.getStatus().then(render);
+  setInterval(() => api.getStatus().then(render), 2500);
+</script>
+</body>
+</html>

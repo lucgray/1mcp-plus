@@ -49,3 +49,7 @@ AGENTS.md
 
 .mcpregistry_github_token
 .mcpregistry_registry_token
+
+# Desktop app build artifacts
+desktop/dist/
+desktop/release/
