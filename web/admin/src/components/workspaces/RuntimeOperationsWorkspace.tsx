@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, CircleCheck, KeyRound, Plus, ServerOff } fro
 import { type MouseEvent, type ReactNode, useState } from 'react';
 
 import { ConfiguredServerDeletionNotice } from '../../configuredServerDelete/ConfiguredServerDeletionNotice';
+import { useI18n } from '../../i18n';
 import type { AdminConsoleRoute, OperatorWorkspaceModel } from '../../session/AdminConsoleSessionModel';
 import { DetailRow, Panel } from '../AdminConsoleShared';
 import { disabledServers, enabledServers, humanize, isOAuthAttention } from '../adminConsoleUtils';
@@ -19,6 +20,7 @@ export function DashboardWorkspace({
   model: OperatorWorkspaceModel;
   navigate(route: AdminConsoleRoute): void | Promise<void>;
 }) {
+  const { t } = useI18n();
   const { state, configuredServers } = model;
   const failedAudits = (state.status?.audit.facts ?? []).filter((fact) => fact.result === 'failed').length;
   const oauthAttention = (state.status?.oauth.services ?? []).filter(isOAuthAttention).length;
@@ -45,52 +47,55 @@ export function DashboardWorkspace({
         Runtime operations
       </Title>
       <WorkspaceHeading
-        title="Overview"
-        description={`Runtime summaries for ${state.session?.account.username ?? 'operator'} · updated ${state.lastUpdatedAt ?? 'never'}`}
+        title={t('dash.title')}
+        description={t('dash.description', {
+          user: state.session?.account.username ?? 'operator',
+          time: state.lastUpdatedAt ?? t('dash.never'),
+        })}
       />
-      <div className="runtime-status-strip" role="status" aria-label="Runtime status and freshness">
+      <div className="runtime-status-strip" role="status" aria-label={t('dash.runtimeOnline')}>
         <Group gap="xs" wrap="nowrap" className="runtime-status-main">
           <span className="runtime-live-dot" />
           <Text fw={800} size="sm">
-            Runtime online
+            {t('dash.runtimeOnline')}
           </Text>
           <Text c="dimmed" size="sm" className="truncate">
-            {runtime?.externalUrl ?? 'Local runtime'}
+            {runtime?.externalUrl ?? t('dash.localRuntime')}
           </Text>
         </Group>
         <Group gap="lg" wrap="nowrap" className="runtime-status-facts">
           <Text size="xs" c="dimmed">
-            Version <strong>{runtime?.runtimeVersion ?? 'unavailable'}</strong>
+            {t('dash.version')} <strong>{runtime?.runtimeVersion ?? t('dash.unavailable')}</strong>
           </Text>
           <Text size="xs" c="dimmed">
-            Updated <strong>{state.lastUpdatedAt ?? 'never'}</strong>
+            {t('dash.updated')} <strong>{state.lastUpdatedAt ?? t('dash.never')}</strong>
           </Text>
         </Group>
       </div>
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm" className="summary-grid">
         <SummaryLink
-          label="Enabled servers"
+          label={t('dash.enabledServers')}
           value={enabledServers(state.configuredServers)}
           tone="good"
           href="/admin/servers"
           onNavigate={() => navigate('servers')}
         />
         <SummaryLink
-          label="Disabled servers"
+          label={t('dash.disabledServers')}
           value={disabled}
           tone="warn"
           href="/admin/servers"
           onNavigate={() => navigate('servers')}
         />
         <SummaryLink
-          label="OAuth attention"
+          label={t('dash.oauthAttention')}
           value={oauthAttention}
           tone={oauthAttention > 0 ? 'warn' : 'good'}
           href="/admin/oauth"
           onNavigate={() => navigate('oauth')}
         />
         <SummaryLink
-          label="Failed audits"
+          label={t('dash.failedAudits')}
           value={failedAudits}
           tone={failedAudits > 0 ? 'bad' : 'good'}
           href="/admin/audit"
@@ -102,22 +107,22 @@ export function DashboardWorkspace({
           <Group justify="space-between" align="flex-start" mb="sm">
             <div>
               <Text className="eyebrow" size="xs">
-                Triage
+                {t('dash.triage')}
               </Text>
               <Title id="attention-title" order={3}>
-                Needs attention
+                {t('dash.needsAttention')}
               </Title>
             </div>
             <Button leftSection={<Plus size={16} />} onClick={() => void configureServer()}>
-              Configure server
+              {t('dash.configureServer')}
             </Button>
           </Group>
           <Stack gap={0} className="attention-list">
             {disabled > 0 ? (
               <AttentionLink
                 icon={<ServerOff size={17} />}
-                label={`${disabled} disabled ${disabled === 1 ? 'server' : 'servers'}`}
-                detail="Review availability before enabling a target."
+                label={t('dash.attention.disabled', { count: disabled })}
+                detail={t('dash.attention.disabledDetail')}
                 href="/admin/servers"
                 onNavigate={() => navigate('servers')}
               />
@@ -125,8 +130,8 @@ export function DashboardWorkspace({
             {oauthAttention > 0 ? (
               <AttentionLink
                 icon={<KeyRound size={17} />}
-                label={`${oauthAttention} OAuth ${oauthAttention === 1 ? 'service needs' : 'services need'} action`}
-                detail="Authorization or restart is required."
+                label={t('dash.attention.oauth', { count: oauthAttention })}
+                detail={t('dash.attention.oauthDetail')}
                 href="/admin/oauth"
                 onNavigate={() => navigate('oauth')}
               />
@@ -134,8 +139,8 @@ export function DashboardWorkspace({
             {failedAudits > 0 ? (
               <AttentionLink
                 icon={<AlertTriangle size={17} />}
-                label={`${failedAudits} failed ${failedAudits === 1 ? 'operation' : 'operations'}`}
-                detail="Inspect recent redacted audit facts."
+                label={t('dash.attention.audits', { count: failedAudits })}
+                detail={t('dash.attention.auditsDetail')}
                 href="/admin/audit"
                 onNavigate={() => navigate('audit')}
               />
@@ -144,28 +149,32 @@ export function DashboardWorkspace({
               <div className="attention-clear">
                 <CircleCheck size={18} />
                 <div>
-                  <Text fw={800}>No action required</Text>
+                  <Text fw={800}>{t('dash.noAction')}</Text>
                   <Text c="dimmed" size="sm">
-                    Configured servers and runtime services report a clear state.
+                    {t('dash.clearState')}
                   </Text>
                 </div>
               </div>
             ) : null}
           </Stack>
         </section>
-        <Panel title="Runtime identity" utility="current target" icon={<span className="runtime-live-dot" />}>
+        <Panel
+          title={t('identity.title')}
+          utility={t('identity.currentTarget')}
+          icon={<span className="runtime-live-dot" />}
+        >
           {runtime ? (
             <SimpleGrid cols={1} spacing="sm" className="runtime-identity-grid">
-              <DetailRow label="Version" value={runtime.runtimeVersion} />
+              <DetailRow label={t('dash.version')} value={runtime.runtimeVersion} />
               <DetailRow
-                label="External URL"
+                label={t('identity.externalUrl')}
                 value={runtime.externalUrl ?? '-'}
                 copyLabel="externalUrl"
                 onCopyText={copyText}
                 wrapValue
               />
               <DetailRow
-                label="Runtime scope"
+                label={t('identity.runtimeScope')}
                 value={runtime.runtimeScopeId}
                 copyLabel="runtimeScopeId"
                 onCopyText={copyText}
@@ -173,7 +182,7 @@ export function DashboardWorkspace({
               />
             </SimpleGrid>
           ) : (
-            <Text c="dimmed">Runtime status has not loaded.</Text>
+            <Text c="dimmed">{t('identity.notLoaded')}</Text>
           )}
         </Panel>
       </div>
@@ -183,6 +192,7 @@ export function DashboardWorkspace({
 }
 
 export function ServersWorkspace({ model }: { model: OperatorWorkspaceModel }) {
+  const { t } = useI18n();
   const { state, configuredServers } = model;
   const creating = configuredServers.create.state.status !== 'idle';
   const editing = configuredServers.edit.state.status !== 'list';
@@ -190,9 +200,12 @@ export function ServersWorkspace({ model }: { model: OperatorWorkspaceModel }) {
   return (
     <section aria-labelledby="servers-workspace-title" className="operations-workspace">
       <WorkspaceHeading
-        title="Configured servers"
+        title={t('servers.title')}
         titleId="servers-workspace-title"
-        description={`${state.configuredServers.length} configured targets · updated ${state.lastUpdatedAt ?? 'never'}`}
+        description={t('servers.description', {
+          count: state.configuredServers.length,
+          time: state.lastUpdatedAt ?? t('dash.never'),
+        })}
       />
       {!creating && !editing && configuredServers.deletionNotice ? (
         <ConfiguredServerDeletionNotice
@@ -222,6 +235,7 @@ export function ServersWorkspace({ model }: { model: OperatorWorkspaceModel }) {
 }
 
 export function AuditTrailWorkspace({ model }: { model: OperatorWorkspaceModel }) {
+  const { t } = useI18n();
   const { state, configuredServers } = model;
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
@@ -237,9 +251,9 @@ export function AuditTrailWorkspace({ model }: { model: OperatorWorkspaceModel }
   return (
     <section aria-labelledby="audit-workspace-title" className="operations-workspace">
       <WorkspaceHeading
-        title="Audit trail"
+        title={t('audit.title')}
         titleId="audit-workspace-title"
-        description={`Recent redacted Admin Operations · updated ${state.lastUpdatedAt ?? 'never'}`}
+        description={t('audit.description', { time: state.lastUpdatedAt ?? t('dash.never') })}
       />
       <AuditPanel facts={state.status?.audit.facts ?? []} onCopyText={copyText} />
       <CopyFeedback message={copyFeedback} />
@@ -256,11 +270,12 @@ export function WorkspaceHeading({
   titleId?: string;
   description: string;
 }) {
+  const { t } = useI18n();
   return (
     <Group justify="space-between" align="flex-start" className="workspace-heading">
       <div>
         <Text className="eyebrow" size="xs">
-          Operator workspace / live
+          {t('workspace.operatorLive')}
         </Text>
         <Title id={titleId} order={2}>
           {title}
