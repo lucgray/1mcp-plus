@@ -36,7 +36,7 @@ export class TrayController {
   init(): void {
     const icon = this.buildIcon();
     this.tray = new Tray(icon);
-    this.tray.setToolTip('1MCP');
+    this.tray.setToolTip('1MCP Plus');
     this.tray.on('click', () => this.actions.toggleQuickView());
     this.rebuildMenu();
   }
@@ -66,9 +66,29 @@ export class TrayController {
     }
   }
 
+  /** Fit the popup's height to the renderer's content, keeping the fixed width. */
+  resizeQuickView(sender: Electron.WebContents, height: number): void {
+    const win = this.quickView;
+    if (!win || win.isDestroyed() || sender !== win.webContents || !Number.isFinite(height)) {
+      return;
+    }
+    const max = screen.getDisplayNearestPoint(win.getBounds()).workArea.height - 24;
+    const target = Math.round(Math.min(Math.max(height, 220), Math.max(max, 220), 640));
+    if (Math.abs(win.getContentSize()[1] - target) > 1) {
+      win.setContentSize(360, target);
+      if (win.isVisible()) {
+        this.positionQuickView(win);
+      }
+    }
+  }
+
   destroy(): void {
     this.quickView?.destroy();
     this.tray?.destroy();
+    // Cleared references keep updateStatus()/rebuildMenu() a no-op while the
+    // managed server still emits shutdown logs during quit.
+    this.quickView = undefined;
+    this.tray = undefined;
   }
 
   private ensureQuickView(): BrowserWindow {
@@ -77,8 +97,8 @@ export class TrayController {
     }
 
     this.quickView = new BrowserWindow({
-      width: 380,
-      height: 520,
+      width: 360,
+      height: 500,
       frame: false,
       resizable: false,
       movable: true,
@@ -149,7 +169,7 @@ export class TrayController {
       : (STATE_LABELS[state] ?? state);
 
     const menu = Menu.buildFromTemplate([
-      { label: `1MCP  ${statusLabel}`, enabled: false },
+      { label: `1MCP Plus — ${statusLabel}`, enabled: false },
       { label: snapshot?.endpoint ?? '', enabled: false },
       { type: 'separator' },
       { label: 'Quick View', click: () => this.actions.toggleQuickView() },
@@ -159,11 +179,11 @@ export class TrayController {
       { label: 'Stop Server', click: () => this.actions.stopServer(), enabled: running || state === 'starting' },
       { label: 'Restart Server', click: () => this.actions.restartServer(), enabled: !busy && !stopped },
       { type: 'separator' },
-      { label: 'Quit 1MCP', click: () => this.actions.quit() },
+      { label: 'Quit 1MCP Plus', click: () => this.actions.quit() },
     ]);
 
     this.tray.setContextMenu(menu);
-    this.tray.setToolTip(`1MCP — ${statusLabel}`);
+    this.tray.setToolTip(`1MCP Plus — ${statusLabel}`);
   }
 
   private buildIcon() {

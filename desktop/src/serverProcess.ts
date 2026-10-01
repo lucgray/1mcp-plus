@@ -103,7 +103,16 @@ export class ServerProcess extends EventEmitter {
     // JS bundles run through Electron's embedded Node (ELECTRON_RUN_AS_NODE).
     // The bundle is loaded via `-e "import(...)"` so process.argv stays
     // [exec, ...cliArgs], matching what the CLI's argv normalization expects.
-    const cliArgs = ['serve', '--host', this.options.host, '--port', String(this.options.port)];
+    // Async loading keeps per-backend load state (ready/loading/failed) in the
+    // runtime tracker, which is what /health/mcp and the quick view read.
+    const cliArgs = [
+      'serve',
+      '--host',
+      this.options.host,
+      '--port',
+      String(this.options.port),
+      '--enable-async-loading',
+    ];
     const args = resolved.viaNode
       ? ['-e', `import(${JSON.stringify(pathToFileURL(resolved.entry).href)})`, ...cliArgs]
       : cliArgs;
@@ -172,7 +181,9 @@ export class ServerProcess extends EventEmitter {
     }
     this.expectedExit = true;
     this.setState('stopping');
-    child.once('exit', () => this.setState('stopped'));
+    // The child's own exit listener turns an expected exit into 'stopped';
+    // adding another listener here would race restart(), whose exit handler
+    // respawns and must leave the state at 'starting'.
     child.kill('SIGTERM');
     setTimeout(() => {
       if (this.child === child && !child.killed) {

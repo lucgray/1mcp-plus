@@ -2,126 +2,324 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
-<title>1MCP</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
+<title>1MCP Plus</title>
 <style>
   :root {
-    --bg: #16181d;
-    --panel: #1e2128;
-    --border: #2c313c;
-    --text: #e8eaf0;
-    --muted: #9aa3b2;
-    --green: #4cc38a;
-    --yellow: #e5b567;
-    --red: #e5534b;
-    --blue: #6aa9ff;
-    --gray: #6b7280;
+    --bg: #0e1013;
+    --surface: rgba(255, 255, 255, 0.045);
+    --surface-hover: rgba(255, 255, 255, 0.08);
+    --hairline: rgba(255, 255, 255, 0.08);
+    --text: #e9ecf1;
+    --muted: #98a0ad;
+    --faint: #68707e;
+    --ok: #3ec97f;
+    --warn: #e0a04c;
+    --err: #e0585c;
+    --info: #5c9ce6;
+    --idle: #77808f;
+    --accent: #7c9cff;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body {
-    font: 13px/1.45 -apple-system, 'Segoe UI', 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font: 13px/1.45 -apple-system, 'Segoe UI Variable Text', 'Segoe UI', 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
     background: var(--bg);
     color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    height: 100vh;
     display: flex;
     flex-direction: column;
     user-select: none;
+    cursor: default;
   }
+
+  /* ---- header ---- */
   header {
+    -webkit-app-region: drag;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 14px 10px;
-    -webkit-app-region: drag;
+    padding: 12px 14px 8px;
   }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--gray); flex: none; }
-  .dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  .dot.starting, .dot.stopping { background: var(--yellow); }
-  .dot.failed { background: var(--red); }
-  .title { font-weight: 600; font-size: 14px; }
-  .state { color: var(--muted); font-size: 12px; }
-  .spacer { flex: 1; }
+  header img.brand { width: 18px; height: 18px; border-radius: 4px; }
+  header .brand-name { font-size: 13px; font-weight: 600; letter-spacing: 0.01em; }
+  header .version {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- status hero ---- */
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 14px 10px;
+  }
+  .dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--idle);
+    flex: none;
+  }
+  .dot::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    opacity: 0;
+  }
+  .dot.running { background: var(--ok); }
+  .dot.starting, .dot.stopping { background: var(--warn); }
+  .dot.failed { background: var(--err); }
+  .dot.starting::after, .dot.stopping::after {
+    border-color: var(--warn);
+    opacity: 1;
+    animation: pulse 1.4s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(0.55); opacity: 0.9; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  .hero .state { font-size: 14px; font-weight: 600; }
+  .hero .summary { color: var(--muted); font-size: 12px; }
+
+  /* ---- endpoint ---- */
   .endpoint {
-    padding: 0 14px 10px;
-    color: var(--blue);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 14px 10px;
+    padding: 6px 9px;
+    border-radius: 7px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
     font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+  .endpoint:hover { background: var(--surface-hover); }
+  .endpoint .url { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .endpoint .copy-hint { color: var(--faint); font-size: 10.5px; font-family: inherit; flex: none; transition: color 0.12s; }
+  .endpoint:hover .copy-hint { color: var(--muted); }
+  .endpoint.copied .copy-hint { color: var(--ok); }
+
+  /* ---- error banner ---- */
+  .banner {
+    display: none;
+    margin: 0 14px 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
     font-size: 12px;
+    line-height: 1.4;
   }
-  .meta { color: var(--muted); font-size: 11px; padding: 0 14px 8px; display: flex; gap: 12px; }
-  .chips { display: flex; gap: 6px; padding: 0 14px 10px; flex-wrap: wrap; }
-  .chip {
-    padding: 2px 8px; border-radius: 10px; font-size: 11px;
-    background: var(--panel); border: 1px solid var(--border); color: var(--muted);
+  .banner.err {
+    display: block;
+    background: rgba(224, 88, 92, 0.1);
+    border: 1px solid rgba(224, 88, 92, 0.25);
+    color: #f0a3a5;
   }
-  .chip b { color: var(--text); font-weight: 600; }
-  .chip.ok b { color: var(--green); }
-  .chip.bad b { color: var(--red); }
-  .chip.wait b { color: var(--yellow); }
+  .banner.warn {
+    display: block;
+    background: rgba(224, 160, 76, 0.1);
+    border: 1px solid rgba(224, 160, 76, 0.25);
+    color: #ecc690;
+  }
+
+  /* ---- server list ---- */
   .servers {
-    flex: 1; overflow-y: auto; padding: 4px 14px 10px;
-    border-top: 1px solid var(--border);
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    border-top: 1px solid var(--hairline);
+    padding: 2px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
+  }
+  .servers::-webkit-scrollbar { width: 6px; }
+  .servers::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+  .section-label {
+    padding: 8px 14px 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
   }
   .server {
-    display: flex; align-items: center; gap: 8px;
-    padding: 7px 2px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 14px;
+    flex-wrap: wrap;
   }
-  .server:last-child { border-bottom: none; }
-  .server .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pill {
-    font-size: 10px; padding: 1px 7px; border-radius: 8px; flex: none;
-    text-transform: uppercase; letter-spacing: 0.4px;
+  .server .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--idle); flex: none; }
+  .server .sdot.ready { background: var(--ok); }
+  .server .sdot.loading, .server .sdot.pending { background: var(--warn); }
+  .server .sdot.failed { background: var(--err); }
+  .server .sdot.awaitingoauth { background: var(--info); }
+  .server .sdot.cancelled { background: var(--faint); }
+  .server .name {
+    flex: 1;
+    min-width: 0;
+    font-size: 12.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .pill.ready { background: rgba(76,195,138,.15); color: var(--green); }
-  .pill.loading, .pill.pending { background: rgba(229,181,103,.15); color: var(--yellow); }
-  .pill.failed { background: rgba(229,83,75,.15); color: var(--red); }
-  .pill.awaitingoauth { background: rgba(106,169,255,.15); color: var(--blue); }
-  .pill.cancelled { background: rgba(107,114,128,.15); color: var(--gray); }
-  .server .err {
-    flex-basis: 100%; color: var(--red); font-size: 11px; padding-left: 18px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  .server .name .prog { color: var(--faint); font-size: 11px; }
+  .server .state-label { font-size: 11px; color: var(--muted); flex: none; }
+  .server .state-label.ready { color: var(--ok); }
+  .server .state-label.failed { color: var(--err); }
+  .server .state-label.loading, .server .state-label.pending { color: var(--warn); }
+  .server .state-label.awaitingoauth { color: var(--info); }
+  .server .err-line {
+    flex-basis: 100%;
+    padding: 0 0 0 15px;
+    color: var(--err);
+    font-size: 11px;
+    opacity: 0.85;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .server { flex-wrap: wrap; }
-  .empty { color: var(--muted); text-align: center; padding: 24px 8px; font-size: 12px; }
+  .empty {
+    color: var(--faint);
+    text-align: center;
+    padding: 26px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .empty code {
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  /* ---- log tail ---- */
   .logs {
-    max-height: 90px; overflow-y: auto; margin: 0 14px 8px;
-    padding: 6px 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
-    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; color: var(--muted);
-    white-space: pre-wrap; word-break: break-all;
+    max-height: 92px;
+    overflow-y: auto;
+    margin: 0 14px 10px;
+    padding: 7px 9px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    white-space: pre-wrap;
+    word-break: break-all;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
   }
+
+  /* ---- footer ---- */
   footer {
-    display: flex; gap: 6px; padding: 10px 14px;
-    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--hairline);
   }
   button {
-    flex: 1; padding: 6px 0; border-radius: 6px; border: 1px solid var(--border);
-    background: var(--panel); color: var(--text); font-size: 12px; cursor: pointer;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 7px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
   }
-  button:hover:not(:disabled) { background: #262b34; border-color: #3a4150; }
-  button:disabled { opacity: 0.4; cursor: default; }
-  button.danger { color: var(--red); }
+  button:hover:not(:disabled) { background: var(--surface-hover); }
+  button:active:not(:disabled) { transform: translateY(0.5px); }
+  button:disabled { opacity: 0.35; cursor: default; }
+  button.primary {
+    background: var(--accent);
+    border-color: transparent;
+    color: #0d1526;
+    font-weight: 600;
+    padding: 5px 14px;
+  }
+  button.primary:hover:not(:disabled) { background: #93b0ff; }
+  button.icon {
+    width: 28px;
+    height: 26px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+  }
+  button.icon svg { width: 13px; height: 13px; display: block; }
+  button.icon.danger:hover:not(:disabled) { color: var(--err); border-color: rgba(224, 88, 92, 0.4); }
+  .footer-right { margin-left: auto; display: flex; gap: 6px; }
+
+  /* ---- skeleton ---- */
+  .skel { padding: 6px 14px; }
+  .skel .bar {
+    height: 12px;
+    border-radius: 5px;
+    margin: 7px 0;
+    background: linear-gradient(90deg, var(--surface) 25%, rgba(255,255,255,0.09) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .fade { animation: fadein 0.15s ease; }
+  @keyframes fadein { from { opacity: 0.4; } to { opacity: 1; } }
 </style>
 </head>
 <body>
   <header>
-    <span class="dot" id="dot"></span>
-    <span class="title">1MCP</span>
-    <span class="state" id="state">—</span>
-    <span class="spacer"></span>
-    <span class="state" id="version"></span>
+    <img class="brand" src="../assets/icon.png" alt="" draggable="false" />
+    <span class="brand-name">1MCP Plus</span>
+    <span class="version" id="version"></span>
   </header>
-  <div class="endpoint" id="endpoint"></div>
-  <div class="meta"><span id="uptime"></span><span id="degraded"></span></div>
-  <div class="chips" id="chips"></div>
-  <div class="servers" id="servers"><div class="empty">Loading…</div></div>
+
+  <div class="hero">
+    <span class="dot" id="dot"></span>
+    <span class="state" id="state">Starting…</span>
+    <span class="summary" id="summary"></span>
+  </div>
+
+  <div class="endpoint" id="endpointBox" title="Click to copy">
+    <span class="url" id="endpoint"></span>
+    <span class="copy-hint" id="copyHint">copy</span>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="servers" id="servers">
+    <div class="skel"><div class="bar" style="width:60%"></div><div class="bar" style="width:85%"></div><div class="bar" style="width:45%"></div></div>
+  </div>
+
   <div class="logs" id="logs" style="display:none"></div>
+
   <footer>
-    <button id="btnConsole">Console</button>
-    <button id="btnToggle">Start</button>
-    <button id="btnRestart">Restart</button>
-    <button id="btnQuit" class="danger">Quit</button>
+    <button class="primary" id="btnConsole">Open Console</button>
+    <div class="footer-right">
+      <button class="icon" id="btnToggle" title="Stop server"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 2.5v5"/><path d="M11.2 4.4a5 5 0 1 1-6.4 0"/></svg></button>
+      <button class="icon" id="btnRestart" title="Restart server"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.5 2.6v2.2h-2.2"/></svg></button>
+      <button class="icon danger" id="btnQuit" title="Quit 1MCP Plus"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </div>
   </footer>
 
 <script>
@@ -129,14 +327,25 @@
   const $ = (id) => document.getElementById(id);
 
   const STATE_TEXT = {
-    stopped: 'Stopped', starting: 'Starting…', running: 'Running',
-    stopping: 'Stopping…', failed: 'Failed',
+    stopped: 'Stopped',
+    starting: 'Starting',
+    running: 'Running',
+    stopping: 'Stopping',
+    failed: 'Failed',
+  };
+  const SERVER_STATE_TEXT = {
+    ready: 'ready',
+    loading: 'loading',
+    pending: 'pending',
+    failed: 'failed',
+    awaitingoauth: 'auth required',
+    cancelled: 'cancelled',
   };
 
   function fmtUptime(sec) {
     if (sec == null) return '';
     const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = Math.floor(sec % 60);
-    return 'uptime ' + (h > 0 ? h + 'h ' : '') + (m > 0 || h > 0 ? m + 'm ' : '') + s + 's';
+    return 'up ' + (h > 0 ? h + 'h ' : '') + (m > 0 || h > 0 ? m + 'm ' : '') + s + 's';
   }
 
   function esc(s) {
@@ -147,39 +356,62 @@
     if (!snap) return;
     $('dot').className = 'dot ' + snap.state;
     $('state').textContent = STATE_TEXT[snap.state] || snap.state;
-    $('endpoint').textContent = snap.endpoint || '';
     $('version').textContent = snap.health && snap.health.version ? 'v' + snap.health.version : '';
-    $('uptime').textContent = snap.health && snap.health.system ? fmtUptime(snap.health.system.uptime) : '';
-    $('degraded').textContent = snap.mcp && snap.mcp.degraded ? 'degraded' : '';
-    $('degraded').style.color = 'var(--yellow)';
 
     const sum = (snap.mcp && snap.mcp.summary) || {};
-    const chips = [];
-    chips.push(`<span class="chip ok">ready <b>${sum.ready || 0}</b></span>`);
-    if (sum.loading) chips.push(`<span class="chip wait">loading <b>${sum.loading}</b></span>`);
-    if (sum.pending) chips.push(`<span class="chip wait">pending <b>${sum.pending}</b></span>`);
-    if (sum.failed) chips.push(`<span class="chip bad">failed <b>${sum.failed}</b></span>`);
-    if (sum.awaitingOAuth) chips.push(`<span class="chip">oauth <b>${sum.awaitingOAuth}</b></span>`);
-    chips.push(`<span class="chip">total <b>${sum.total || 0}</b></span>`);
-    $('chips').innerHTML = chips.join('');
+    const parts = [];
+    if (snap.state === 'running' || snap.state === 'starting') {
+      if (sum.total != null && sum.total > 0) {
+        parts.push(`${sum.ready || 0}/${sum.total} ready`);
+        if (sum.failed) parts.push(`${sum.failed} failed`);
+        if (sum.loading || sum.pending) parts.push(`${(sum.loading || 0) + (sum.pending || 0)} loading`);
+      }
+      if (snap.health && snap.health.system && snap.health.system.uptime != null) {
+        parts.push(fmtUptime(snap.health.system.uptime));
+      }
+      if (snap.mcp && snap.mcp.degraded) parts.push('degraded');
+    }
+    $('summary').textContent = parts.join(' · ');
+
+    $('endpoint').textContent = snap.endpoint || '';
+
+    const banner = $('banner');
+    if (snap.state === 'failed' && snap.error) {
+      banner.className = 'banner err';
+      banner.textContent = snap.error;
+    } else if (snap.mcp && snap.mcp.degraded && sum.failed) {
+      banner.className = 'banner warn';
+      banner.textContent = `${sum.failed} of ${sum.total} servers failed — the runtime continues with the rest.`;
+    } else {
+      banner.className = 'banner';
+      banner.textContent = '';
+    }
 
     const details = (snap.mcp && snap.mcp.servers && snap.mcp.servers.details) || {};
     const names = Object.keys(details).sort();
+    const list = $('servers');
     if (names.length === 0) {
-      $('servers').innerHTML =
+      list.innerHTML =
         snap.state === 'running'
-          ? '<div class="empty">No MCP servers configured.<br>Add one with <code>1mcp mcp add</code>.</div>'
-          : '<div class="empty">Server is not running.</div>';
+          ? '<div class="empty">No MCP servers configured.<br>Add one with <code>1mcp mcp add</code></div>'
+          : '<div class="empty">The server is not running.<br>Start it from the tray menu or the power button below.</div>';
     } else {
-      $('servers').innerHTML = names
-        .map((name) => {
-          const d = details[name];
-          const st = String(d.state || 'pending').toLowerCase();
-          const err = d.error ? `<div class="err" title="${esc(d.error)}">${esc(d.error)}</div>` : '';
-          const prog = d.progress ? ` · ${esc(d.progress)}` : '';
-          return `<div class="server"><span class="name" title="${esc(name)}">${esc(name)}${prog}</span><span class="pill ${st}">${esc(st)}</span>${err}</div>`;
-        })
-        .join('');
+      list.innerHTML =
+        `<div class="section-label">Servers · ${names.length}</div>` +
+        names
+          .map((name) => {
+            const d = details[name];
+            const st = String(d.state || 'pending').toLowerCase();
+            const transient = st === 'pending' || st === 'loading' || st === 'connecting';
+            const prog = transient && d.progress ? ` <span class="prog">${esc(d.progress)}</span>` : '';
+            const err = d.error ? `<div class="err-line" title="${esc(d.error)}">${esc(d.error)}</div>` : '';
+            return (
+              `<div class="server fade"><span class="sdot ${st}"></span>` +
+              `<span class="name" title="${esc(name)}">${esc(name)}${prog}</span>` +
+              `<span class="state-label ${st}">${SERVER_STATE_TEXT[st] || esc(st)}</span>${err}</div>`
+            );
+          })
+          .join('');
     }
 
     const tail = snap.logTail || [];
@@ -192,10 +424,30 @@
       $('logs').scrollTop = $('logs').scrollHeight;
     }
 
-    $('btnToggle').textContent = snap.state === 'running' || snap.state === 'starting' ? 'Stop' : 'Start';
-    $('btnToggle').dataset.target = snap.state === 'running' || snap.state === 'starting' ? 'stop' : 'start';
+    const running = snap.state === 'running' || snap.state === 'starting';
+    $('btnToggle').dataset.target = running ? 'stop' : 'start';
+    $('btnToggle').title = running ? 'Stop server' : 'Start server';
+    $('btnToggle').querySelector('svg').style.color = running ? 'var(--err)' : '';
     $('btnRestart').disabled = snap.state !== 'running';
     $('btnConsole').disabled = snap.state !== 'running';
+
+    fit();
+  }
+
+  // Ask the host to size the popup to its content; the server list scrolls
+  // past ~9 rows instead of growing the window without bound.
+  function fit() {
+    if (!api.setHeight) return;
+    const s = $('servers');
+    const maxList = 26 + 9 * 31 + 20;
+    const fixed =
+      document.querySelector('header').offsetHeight +
+      document.querySelector('.hero').offsetHeight +
+      $('endpointBox').offsetHeight + 10 +
+      ($('banner').offsetHeight ? $('banner').offsetHeight + 10 : 0) +
+      ($('logs').offsetHeight ? $('logs').offsetHeight + 10 : 0) +
+      document.querySelector('footer').offsetHeight;
+    api.setHeight(Math.ceil(fixed + Math.min(s.scrollHeight, maxList)) + 2);
   }
 
   $('btnConsole').addEventListener('click', () => api.control('open-dashboard'));
@@ -203,9 +455,33 @@
   $('btnRestart').addEventListener('click', () => api.control('restart'));
   $('btnQuit').addEventListener('click', () => api.control('quit'));
 
+  $('endpointBox').addEventListener('click', () => {
+    const url = $('endpoint').textContent;
+    if (!url) return;
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch { /* noop */ }
+    document.body.removeChild(ta);
+    $('copyHint').textContent = 'copied';
+    $('endpointBox').classList.add('copied');
+    setTimeout(() => {
+      $('copyHint').textContent = 'copy';
+      $('endpointBox').classList.remove('copied');
+    }, 1200);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') api.control('hide-quickview');
+  });
+
   api.onStatus(render);
   api.getStatus().then(render);
-  setInterval(() => api.getStatus().then(render), 2500);
+  setInterval(() => api.getStatus().then(render), 5000);
+  fit();
 </script>
 </body>
 </html>
