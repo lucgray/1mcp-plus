@@ -3,6 +3,7 @@ import { Stack } from '@mantine/core';
 import { AlertTriangle } from 'lucide-react';
 
 import type { AdminAuditFact } from '../api/adminApi';
+import { useI18n } from '../i18n';
 import { DetailRow, EmptyState, Panel } from './AdminConsoleShared';
 
 export function AuditPanel({
@@ -12,10 +13,11 @@ export function AuditPanel({
   facts: AdminAuditFact[];
   onCopyText?: (label: string, value: string) => Promise<void>;
 }) {
+  const { t } = useI18n();
   return (
-    <Panel title="Recent audit facts" utility="redacted" icon={<AlertTriangle size={17} />}>
+    <Panel title={t('audit.panelTitle')} utility={t('audit.redacted')} icon={<AlertTriangle size={17} />}>
       {facts.length === 0 ? (
-        <EmptyState message="No recent admin audit facts." />
+        <EmptyState message={t('audit.empty')} />
       ) : (
         <Stack gap="xs">
           {facts.map((fact) => (

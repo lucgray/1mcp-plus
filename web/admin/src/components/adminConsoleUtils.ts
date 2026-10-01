@@ -148,11 +148,16 @@ export function riskFlagLabel(flag: string): string {
   }
 }
 
-export function secretSummary(server: ConfiguredServerReadModel): string {
+export function secretSummary(
+  server: ConfiguredServerReadModel,
+  t?: (key: string, params?: Record<string, string | number>) => string,
+): string {
   if (server.secretInputs.length === 0) {
-    return 'No secret inputs';
+    return t ? t('common.noSecretInputs') : 'No secret inputs';
   }
-  return `${server.secretInputs.length} redacted`;
+  return t
+    ? t('common.secretInputsRedacted', { count: server.secretInputs.length })
+    : `${server.secretInputs.length} redacted`;
 }
 
 export function runtimeSummary(runtime?: RuntimeIdentity): string {
@@ -163,8 +168,9 @@ export function runtimeEndpointSummary(runtime?: RuntimeIdentity): string {
   return runtime?.externalUrl ?? 'not reported';
 }
 
-export function viewLabel(state: AdminConsoleState): string {
-  return state.view === 'setupRequired' ? 'Setup required' : state.view;
+export function viewLabel(state: AdminConsoleState, t?: (key: string) => string): string {
+  if (state.view === 'setupRequired') return t ? t('view.setupRequired') : 'Setup required';
+  return state.view;
 }
 
 export function viewBadgeColor(state: AdminConsoleState): string {

@@ -3,6 +3,7 @@ import { Button, Group, Paper, Stack, Text, Title } from '@mantine/core';
 import { Clipboard } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { useI18n } from '../i18n';
 import { humanize } from './adminConsoleUtils';
 
 export function DetailRow({
@@ -24,6 +25,7 @@ export function DetailRow({
   onCopyText?: (label: string, value: string) => Promise<void>;
   wrapValue?: boolean;
 }) {
+  const { t } = useI18n();
   const valueToCopy = copyValue ?? value;
 
   return (
@@ -46,13 +48,13 @@ export function DetailRow({
       </div>
       {copyLabel && valueToCopy !== '-' ? (
         <Button
-          aria-label={`Copy ${humanize(copyLabel)}`}
+          aria-label={t('common.copyValue', { label: humanize(copyLabel) })}
           size="compact-xs"
           variant="subtle"
           leftSection={<Clipboard size={14} />}
           onClick={() => void onCopyText?.(copyLabel, valueToCopy)}
         >
-          Copy
+          {t('common.copy')}
         </Button>
       ) : null}
     </Group>

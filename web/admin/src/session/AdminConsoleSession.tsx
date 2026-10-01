@@ -17,6 +17,7 @@ import { useConfiguredServerCreate } from '../configuredServerCreate/useConfigur
 import { configuredServerDeleteRecoveryRequired } from '../configuredServerDelete/configuredServerDeleteState';
 import { useConfiguredServerDelete } from '../configuredServerDelete/useConfiguredServerDelete';
 import { useConfiguredServerEdit } from '../configuredServerEdit/useConfiguredServerEdit';
+import { useI18n } from '../i18n';
 import { useInstructionTemplates } from '../instructionTemplates/useInstructionTemplates';
 import { type AdminConsoleAction, createInitialState, reduceAdminConsoleState } from '../state/adminConsoleState';
 import { pollingDelayForVisibility, shouldPollConsole } from '../state/polling';
@@ -92,6 +93,7 @@ export function useAdminConsoleSession({
   Pick<AdminConsoleRootProps, 'nowLabel'> & {
     confirm: ReturnType<typeof useConfirmationDialog>;
   }): AdminConsoleSessionModel {
+  const { t } = useI18n();
   const [state, setState] = useState(createInitialState);
   const [loginBusy, setLoginBusy] = useState(false);
   const [route, setRoute] = useState(() => adminRoute(windowRef.location?.pathname ?? '/admin'));
@@ -258,14 +260,17 @@ export function useAdminConsoleSession({
         const csrfToken = stateRef.current.session?.csrfToken;
         if (!csrfToken) return false;
         const confirmed = await confirm({
-          title: `${presetActionLabel(input.action)} ${input.preview.draft.name}?`,
-          message: 'The preview must still match the current preset store when this change is saved.',
-          confirmLabel: `${presetActionLabel(input.action)} preset`,
+          title: t('confirm.presetActionTitle', {
+            action: presetActionLabel(input.action, t),
+            name: input.preview.draft.name,
+          }),
+          message: t('confirm.presetActionMessage'),
+          confirmLabel: t('confirm.presetActionConfirm', { action: presetActionLabel(input.action, t) }),
           details: [
-            { label: 'Preset', value: input.preview.draft.name },
-            { label: 'Current matches', value: String(input.preview.matchCount) },
+            { label: t('confirm.preset'), value: input.preview.draft.name },
+            { label: t('confirm.currentMatches'), value: String(input.preview.matchCount) },
             ...(input.preview.matchCount === 0
-              ? [{ label: 'Attention', value: 'This preset currently matches no configured servers.' }]
+              ? [{ label: t('confirm.attention'), value: t('confirm.zeroMatches') }]
               : []),
           ],
         });
@@ -288,7 +293,7 @@ export function useAdminConsoleSession({
         presetSaveBusyRef.current = false;
       }
     },
-    [api, confirm, loadPresets],
+    [api, confirm, loadPresets, t],
   );
 
   const deletePreset = useCallback(
@@ -301,14 +306,14 @@ export function useAdminConsoleSession({
         const preview = await api.previewPresetDelete({ name, revision: presetRevision, csrfToken });
         const matches = preview.matches.filter((match) => match.matched).map((match) => match.name);
         const confirmed = await confirm({
-          title: `Delete ${name}?`,
-          message: 'This removes the preset from the current Runtime Scope.',
-          confirmLabel: 'Delete preset',
+          title: t('confirm.deletePresetTitle', { name }),
+          message: t('confirm.deletePresetMessage'),
+          confirmLabel: t('confirm.deletePresetConfirm'),
           tone: 'danger',
           details: [
-            { label: 'Preset', value: name },
-            { label: 'Current matches', value: matches.join(', ') || 'none' },
-            { label: 'Consequence', value: preview.consequence },
+            { label: t('confirm.preset'), value: name },
+            { label: t('confirm.currentMatches'), value: matches.join(', ') || t('common.none') },
+            { label: t('confirm.consequence'), value: preview.consequence },
           ],
         });
         if (!confirmed) return;
@@ -323,7 +328,7 @@ export function useAdminConsoleSession({
         presetDeleteBusyRef.current = false;
       }
     },
-    [api, confirm, loadPresets, presetRevision],
+    [api, confirm, loadPresets, presetRevision, t],
   );
 
   const navigate = useCallback(
@@ -451,26 +456,29 @@ export function useAdminConsoleSession({
           const target: ConfiguredServerTargetIdentity = { id: name, source };
           const preview = await api.previewConfiguredServerLifecycle({ target, enabled, csrfToken: sessionKey });
           const confirmed = await confirm({
-            title: `${enabled ? 'Enable' : 'Disable'} Template Server ${name}?`,
-            message: preview.preview.warnings.join(' ') || 'Apply the source-qualified definition lifecycle change.',
-            confirmLabel: enabled ? 'Enable template' : 'Disable template',
+            title: t(enabled ? 'confirm.enableTemplateTitle' : 'confirm.disableTemplateTitle', { name }),
+            message: preview.preview.warnings.join(' ') || t('confirm.lifecycleMessage'),
+            confirmLabel: enabled ? t('confirm.enableTemplate') : t('confirm.disableTemplate'),
             tone: enabled ? 'default' : 'danger',
             details: [
-              { label: 'Target', value: preview.preview.qualifiedId },
-              { label: 'Active instances', value: String(preview.preview.runtimeImpact.activeInstanceCount) },
+              { label: t('confirm.target'), value: preview.preview.qualifiedId },
+              {
+                label: t('confirm.activeInstances'),
+                value: String(preview.preview.runtimeImpact.activeInstanceCount),
+              },
               ...(preview.preview.expressionReplacement.occurs
                 ? [
                     {
-                      label: 'Expression replacement',
-                      value: 'Context-rendered disabled expression becomes literal true.',
+                      label: t('confirm.expressionReplacement'),
+                      value: t('confirm.expressionReplacementValue'),
                     },
                   ]
                 : []),
-              { label: 'Re-enable behavior', value: 'Future matching requests create instances lazily.' },
+              { label: t('confirm.reenableBehavior'), value: t('confirm.reenableValue') },
             ],
           });
           if (!confirmed) {
-            dispatch({ type: 'mutationFailed', serverId, action, message: 'Lifecycle change cancelled.' });
+            dispatch({ type: 'mutationFailed', serverId, action, message: t('confirm.cancelled') });
             return;
           }
           const applied = await api.applyConfiguredServerLifecycle({
@@ -519,7 +527,7 @@ export function useAdminConsoleSession({
         }
       }
     },
-    [api, confirm, dispatch, handleUnauthenticated, isCurrentSession, refreshConsole],
+    [api, confirm, dispatch, handleUnauthenticated, isCurrentSession, refreshConsole, t],
   );
 
   const operateOAuth = useCallback(
@@ -645,10 +653,10 @@ export function useAdminConsoleSession({
   };
 }
 
-function presetActionLabel(action: 'create' | 'update' | 'duplicate'): string {
-  if (action === 'create') return 'Create';
-  if (action === 'duplicate') return 'Duplicate';
-  return 'Update';
+function presetActionLabel(action: 'create' | 'update' | 'duplicate', t: (key: string) => string): string {
+  if (action === 'create') return t('confirm.create');
+  if (action === 'duplicate') return t('confirm.duplicate');
+  return t('confirm.update');
 }
 
 function adminRoute(pathname: string): AdminConsoleRoute {

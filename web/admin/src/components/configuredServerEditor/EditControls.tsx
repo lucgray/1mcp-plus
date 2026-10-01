@@ -26,20 +26,20 @@ import {
   splitStringList,
   stringArray,
 } from '../../configuredServerEdit/configuredServerEditDraft';
+import { type I18n, useI18n } from '../../i18n';
 import { DetailRow } from '../AdminConsoleShared';
 
-export function editGroupHelp(groupId: string): string {
-  if (groupId === 'identity') {
-    return 'Rename or enable this target before previewing.';
-  }
-  if (groupId === 'secrets') {
-    return 'Choose preserve, replace, or clear without revealing current values.';
-  }
-  if (groupId === 'transport') {
-    return 'Change how the runtime connects to this server.';
-  }
-  return 'Edit normalized fields owned by the Admin Domain.';
+export function editGroupHelp(groupId: string, t?: I18n['t']): string {
+  const key = `editGroup.${groupId}`;
+  return t ? t(key) : (EDIT_GROUP_FALLBACK[groupId] ?? EDIT_GROUP_FALLBACK.default);
 }
+
+const EDIT_GROUP_FALLBACK: Record<string, string> = {
+  identity: 'Rename or enable this target before previewing.',
+  secrets: 'Choose preserve, replace, or clear without revealing current values.',
+  transport: 'Change how the runtime connects to this server.',
+  default: 'Edit normalized fields owned by the Admin Domain.',
+};
 
 export function ConfiguredServerFieldDraft({
   field,
@@ -123,6 +123,7 @@ function RecordFieldDraft({
   value: Record<string, unknown>;
   onChange: (value: Record<string, unknown>) => void;
 }) {
+  const { t } = useI18n();
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
 
@@ -158,29 +159,29 @@ function RecordFieldDraft({
             onChange={(event) => updateEntry(key, event.currentTarget.value)}
           />
           <Button
-            aria-label={`Remove ${label} ${key}`}
+            aria-label={t('editControls.removeEntry', { label, key })}
             size="compact-xs"
             variant="subtle"
             color="red"
             onClick={() => removeEntry(key)}
           >
-            Remove
+            {t('common.remove')}
           </Button>
         </Group>
       ))}
       <Group gap="xs" align="flex-end">
         <TextInput
-          label={`New ${label} key`}
+          label={t('editControls.newKey', { label })}
           value={newKey}
           onChange={(event) => setNewKey(event.currentTarget.value)}
         />
         <TextInput
-          label={`New ${label} value`}
+          label={t('editControls.newValue', { label })}
           value={newValue}
           onChange={(event) => setNewValue(event.currentTarget.value)}
         />
         <Button variant="default" onClick={addEntry}>
-          Add entry
+          {t('editControls.addEntry')}
         </Button>
       </Group>
     </Stack>
@@ -196,6 +197,7 @@ export function SecretFieldDraft({
   draft?: SecretDraftState[string];
   onChange: (draft: SecretDraftState[string]) => void;
 }) {
+  const { t } = useI18n();
   const current =
     draft ??
     ({
@@ -216,15 +218,14 @@ export function SecretFieldDraft({
           <div>
             <Text fw={700}>{field.label}</Text>
             <Text size="xs" c="dimmed">
-              {field.secret?.environmentReference.guidance ??
-                'Store only an environment variable name or substitution expression when possible.'}
+              {field.secret?.environmentReference.guidance ?? t('editControls.secretGuidance')}
             </Text>
           </div>
           <Group gap={4}>
-            <Badge variant="light">redacted</Badge>
+            <Badge variant="light">{t('editControls.redacted')}</Badge>
             {environmentRecommended ? (
               <Badge color="teal" variant="light">
-                env reference recommended
+                {t('editControls.envRefRecommended')}
               </Badge>
             ) : null}
           </Group>
@@ -235,18 +236,17 @@ export function SecretFieldDraft({
         >
           <Group gap="sm">
             {actions.map((action) => (
-              <Radio key={action} value={action} label={secretActionLabel(action, field.label)} />
+              <Radio key={action} value={action} label={secretActionLabel(action, field.label, t)} />
             ))}
           </Group>
         </Radio.Group>
         {current.action === 'replace' ? (
           <Stack gap="xs">
             <Alert color="teal" variant="light">
-              Recommended: keep secret material outside 1MCP config by writing only an environment variable name or
-              substitution expression.
+              {t('editControls.keepSecretOutside')}
             </Alert>
             <Radio.Group
-              label="Replacement source"
+              label={t('editControls.replacementSource')}
               value={current.replacementKind}
               onChange={(value) =>
                 onChange({ ...current, replacementKind: value as SecretDraftState[string]['replacementKind'] })
@@ -256,15 +256,15 @@ export function SecretFieldDraft({
                 <Radio
                   disabled={!environmentSupported}
                   value="environmentReference"
-                  label="Environment variable (recommended)"
+                  label={t('editControls.envVarRecommended')}
                 />
               </Group>
             </Radio.Group>
             {current.replacementKind === 'environmentReference' ? (
               <>
                 <TextInput
-                  label={`Environment variable for ${field.label}`}
-                  description="Example: GITHUB_TOKEN or ${GITHUB_TOKEN}"
+                  label={t('editControls.envVarFor', { label: field.label })}
+                  description={t('editControls.envVarExample')}
                   value={current.replacementValue}
                   onChange={(event) => onChange({ ...current, replacementValue: event.currentTarget.value })}
                 />
@@ -275,18 +275,17 @@ export function SecretFieldDraft({
                     color="yellow"
                     onClick={() => onChange({ ...current, replacementKind: 'inlineSecret', replacementValue: '' })}
                   >
-                    Use advanced inline secret instead
+                    {t('editControls.useInlineSecret')}
                   </Button>
                 ) : null}
               </>
             ) : (
               <>
                 <Alert color="yellow" role="alert">
-                  Advanced path: inline replacement stores secret material in configuration. Prefer an environment
-                  reference unless the deployment cannot provide one.
+                  {t('editControls.inlineWarning')}
                 </Alert>
                 <PasswordInput
-                  label={`Inline secret for ${field.label}`}
+                  label={t('editControls.inlineSecretFor', { label: field.label })}
                   value={current.replacementValue}
                   onChange={(event) => onChange({ ...current, replacementValue: event.currentTarget.value })}
                 />
@@ -298,7 +297,7 @@ export function SecretFieldDraft({
                       onChange({ ...current, replacementKind: 'environmentReference', replacementValue: '' })
                     }
                   >
-                    Use environment variable instead
+                    {t('editControls.useEnvVar')}
                   </Button>
                 ) : null}
               </>
@@ -315,12 +314,12 @@ export function SecretFieldDraft({
   );
 }
 
-function secretActionLabel(action: SecretDraftState[string]['action'], label: string): string {
+function secretActionLabel(action: SecretDraftState[string]['action'], label: string, t: I18n['t']): string {
   if (action === 'preserve') {
-    return `Preserve existing ${label}`;
+    return t('editControls.preserve', { label });
   }
   if (action === 'replace') {
-    return `Replace ${label}`;
+    return t('editControls.replace', { label });
   }
-  return `Clear saved ${label}`;
+  return t('editControls.clear', { label });
 }

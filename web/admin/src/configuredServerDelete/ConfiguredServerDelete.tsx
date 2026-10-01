@@ -3,6 +3,7 @@ import { Alert, Button, Code, Group, Paper, Stack, Text, TextInput } from '@mant
 import { Trash2 } from 'lucide-react';
 
 import type { ConfiguredServerTargetIdentity } from '../api/adminApi';
+import { useI18n } from '../i18n';
 import { configuredServerDeleteEligible, configuredServerDeleteRecoveryRequired } from './configuredServerDeleteState';
 import type { ConfiguredServerDeleteModel } from './useConfiguredServerDelete';
 
@@ -13,6 +14,7 @@ export function ConfiguredServerDelete({
   model: ConfiguredServerDeleteModel;
   target: ConfiguredServerTargetIdentity;
 }) {
+  const { t } = useI18n();
   const { state } = model;
   const preview = state.preview;
   const result = state.result;
@@ -22,22 +24,20 @@ export function ConfiguredServerDelete({
       <Stack gap="sm">
         <div>
           <Text fw={800} c="red">
-            Delete definition
+            {t('delete.title')}
           </Text>
           <Text c="dimmed" size="sm">
-            Remove this source-qualified definition after a recovery copy and Runtime Scope reload observation.
+            {t('delete.description')}
           </Text>
         </div>
         {result ? (
           <Alert color={configuredServerDeleteRecoveryRequired(result) ? 'yellow' : 'teal'} role="status">
             {configuredServerDeleteRecoveryRequired(result)
               ? result.configChange.reload.status === 'failed'
-                ? 'The definition was deleted from disk, but runtime reload failed and the runtime may still serve this target.'
-                : 'The definition was deleted from disk, but Template instance retirement was not confirmed and the runtime may still serve this target.'
-              : 'The definition was deleted from disk and the runtime reload was observed.'}{' '}
-            {result.configChange.backup.created
-              ? 'A recovery backup exists. Restore it if the deletion must be reversed.'
-              : 'No recovery backup was reported; inspect runtime and configuration state before continuing.'}
+                ? t('delete.resultReloadFailed')
+                : t('delete.resultRetirementUnconfirmed')
+              : t('delete.resultOk')}{' '}
+            {result.configChange.backup.created ? t('delete.backupExists') : t('delete.noBackup')}
           </Alert>
         ) : !preview ? (
           <Button
@@ -48,36 +48,42 @@ export function ConfiguredServerDelete({
             disabled={state.previewBusy || state.applyBusy}
             onClick={() => void model.preview(target)}
           >
-            Preview deletion
+            {t('delete.previewDeletion')}
           </Button>
         ) : (
           <Stack gap="xs">
-            <Alert color="red" title={`Delete ${preview.qualifiedId}`}>
+            <Alert color="red" title={t('delete.confirmTitle', { id: preview.qualifiedId })}>
               {preview.runtimeImpact.kind === 'template'
-                ? `${preview.runtimeImpact.activeInstanceCount} active instance${preview.runtimeImpact.activeInstanceCount === 1 ? '' : 's'} will be retired after reload.`
-                : 'The configured backend will be removed after reload.'}
-              {preview.removal.preservesSameNamedOtherSource
-                ? ' The same-named definition in the other source remains.'
-                : ''}
+                ? t('delete.retireAfterReload', { count: preview.runtimeImpact.activeInstanceCount })
+                : t('delete.removeBackend')}
+              {preview.removal.preservesSameNamedOtherSource ? ` ${t('delete.sameNamedRemains')}` : ''}
             </Alert>
             <Stack gap={2} className="configured-server-delete-facts">
-              <Text size="xs">Identity: {preview.qualifiedId}</Text>
-              <Text size="xs">Authority: {preview.authority}</Text>
-              <Text size="xs">Target fingerprint: {preview.targetFingerprint}</Text>
-              <Text size="xs">Removal diff: present definition to removed</Text>
-              <Text size="xs">Backup: required recovery copy before write</Text>
-              <Text size="xs">Reload: observe after write</Text>
-              <Text size="xs">Expected reload outcomes: {preview.expectedReload.possibleStatuses.join(', ')}</Text>
               <Text size="xs">
-                Runtime impact:{' '}
+                {t('delete.identity')} {preview.qualifiedId}
+              </Text>
+              <Text size="xs">
+                {t('delete.authority')} {preview.authority}
+              </Text>
+              <Text size="xs">
+                {t('delete.fingerprint')} {preview.targetFingerprint}
+              </Text>
+              <Text size="xs">{t('delete.removalDiff')}</Text>
+              <Text size="xs">{t('delete.backupLine')}</Text>
+              <Text size="xs">{t('delete.reloadLine')}</Text>
+              <Text size="xs">
+                {t('delete.expectedReload')} {preview.expectedReload.possibleStatuses.join(', ')}
+              </Text>
+              <Text size="xs">
+                {t('delete.runtimeImpact')}{' '}
                 {preview.runtimeImpact.kind === 'template'
-                  ? `retire ${preview.runtimeImpact.activeInstanceCount} active instance${preview.runtimeImpact.activeInstanceCount === 1 ? '' : 's'} after reload`
-                  : 'remove configured backend after reload'}
+                  ? t('delete.retireInstances', { count: preview.runtimeImpact.activeInstanceCount })
+                  : t('delete.removeBackend')}
               </Text>
             </Stack>
             <div>
               <Text size="xs" fw={700}>
-                Redacted definition
+                {t('delete.redactedDefinition')}
               </Text>
               <Code block>{JSON.stringify(preview.removal.definition, null, 2)}</Code>
             </div>
@@ -87,7 +93,7 @@ export function ConfiguredServerDelete({
               </Text>
             ))}
             <TextInput
-              label={`Type ${preview.qualifiedId} to confirm`}
+              label={t('delete.typeToConfirm', { id: preview.qualifiedId })}
               value={state.confirmation}
               disabled={state.applyBusy}
               autoComplete="off"
@@ -104,7 +110,7 @@ export function ConfiguredServerDelete({
                 disabled={!configuredServerDeleteEligible(state)}
                 onClick={() => void model.apply(target)}
               >
-                Delete definition
+                {t('delete.title')}
               </Button>
             </Group>
           </Stack>

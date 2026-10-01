@@ -117,7 +117,7 @@ export function AdminConsoleApp({ session }: AdminConsoleAppProps) {
                 </Text>
               </div>
               <Badge className="global-view-badge" variant="light" color={viewBadgeColor(state)}>
-                {viewLabel(state)}
+                {viewLabel(state, t)}
               </Badge>
               <Tooltip label={t('header.refresh')}>
                 <ActionIcon
@@ -152,7 +152,7 @@ export function AdminConsoleApp({ session }: AdminConsoleAppProps) {
             </Group>
           </Group>
         </AppShell.Header>
-        <AppShell.Navbar className="admin-app-navbar" aria-label="Operations navigation">
+        <AppShell.Navbar className="admin-app-navbar" aria-label={t('header.operationsNav')}>
           <Stack gap="lg" className="nav-stack">
             <Stack gap={4}>
               <Text className="nav-section-label">{t('nav.manage')}</Text>

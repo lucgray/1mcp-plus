@@ -18,6 +18,7 @@ import { CheckCircle2, Copy, FileInput, FileText, Play, RefreshCw, Save, ShieldC
 import { useState } from 'react';
 
 import type { InstructionTemplateSelection, InstructionTemplateSurface } from '../../api/adminApi';
+import { useI18n } from '../../i18n';
 import type { InstructionTemplatesModel } from '../../instructionTemplates/useInstructionTemplates';
 
 export function InstructionTemplatesWorkspace({
@@ -27,6 +28,7 @@ export function InstructionTemplatesWorkspace({
   model: InstructionTemplatesModel;
   runtimeScopeId?: string;
 }) {
+  const { t } = useI18n();
   const selected = model.items.find((item) => item.identity === model.selectedIdentity);
   const [copyIdentity, setCopyIdentity] = useState('');
   const [legacyIdentity, setLegacyIdentity] = useState('legacy');
@@ -38,30 +40,32 @@ export function InstructionTemplatesWorkspace({
       <Group justify="space-between" align="flex-start" className="workspace-heading">
         <div>
           <Text className="eyebrow" size="xs">
-            Runtime Scope / {runtimeScopeId ?? 'unavailable'}
+            {t('common.runtimeScope')} / {runtimeScopeId ?? t('common.unavailable')}
           </Text>
           <Title id="instruction-templates-title" order={2}>
-            Instruction templates
+            {t('instr.title')}
           </Title>
           <Text c="dimmed" size="sm">
-            Author the initialization and CLI instructions used by new client surfaces.
+            {t('instr.description')}
           </Text>
         </div>
         <Group gap="xs">
           <Badge color={model.selectionExplicit ? 'teal' : 'gray'} variant="light">
-            {model.selectionExplicit ? `Active: ${model.activeIdentity ?? 'none'}` : 'Legacy selection'}
+            {model.selectionExplicit
+              ? t('instr.activeBadge', { id: model.activeIdentity ?? t('instr.none') })
+              : t('instr.legacySelection')}
           </Badge>
           <Button
-            aria-label="Refresh instruction templates"
+            aria-label={t('instr.refresh')}
             leftSection={<RefreshCw size={15} />}
             variant="default"
             loading={model.busy}
             onClick={() => void model.load()}
           >
-            Refresh
+            {t('instr.refresh')}
           </Button>
           <Button leftSection={<FileText size={15} />} onClick={model.newDraft}>
-            New template
+            {t('instr.newTemplate')}
           </Button>
         </Group>
       </Group>
@@ -72,13 +76,13 @@ export function InstructionTemplatesWorkspace({
         </Alert>
       ) : null}
       {model.reloadWarning ? (
-        <Alert color="yellow" role="status" mb="md" title="Runtime reload needs attention">
+        <Alert color="yellow" role="status" mb="md" title={t('instr.reloadWarning')}>
           {model.reloadWarning}
         </Alert>
       ) : null}
       {Object.values(model.renderFailures).map((failure) => (
         <Alert key={failure.surface} color="yellow" mb="sm" role="status">
-          {surfaceLabel(failure.surface)} rendering fell back to the built-in template for {failure.templateIdentity}.
+          {t('instr.renderFallback', { surface: surfaceLabel(failure.surface), id: failure.templateIdentity })}
           <Text component="span" size="xs" c="dimmed">
             {' '}
             {failure.code}
@@ -87,9 +91,9 @@ export function InstructionTemplatesWorkspace({
       ))}
 
       <div className="instruction-workspace-grid">
-        <aside className="instruction-template-list" aria-label="Instruction template library">
+        <aside className="instruction-template-list" aria-label={t('instr.libraryAria')}>
           <Group justify="space-between" className="instruction-pane-heading">
-            <Text fw={800}>Template library</Text>
+            <Text fw={800}>{t('instr.library')}</Text>
             <Badge variant="outline">{model.items.length}</Badge>
           </Group>
           <Stack gap={4} className="instruction-template-scroll">
@@ -103,17 +107,17 @@ export function InstructionTemplatesWorkspace({
               >
                 <span className="instruction-template-identity">{item.identity}</span>
                 <span className="instruction-template-badges">
-                  {item.active ? <Badge color="teal">Active</Badge> : null}
-                  {item.protected ? <Badge variant="outline">Built-in</Badge> : null}
+                  {item.active ? <Badge color="teal">{t('instr.active')}</Badge> : null}
+                  {item.protected ? <Badge variant="outline">{t('instr.builtIn')}</Badge> : null}
                   <Badge color={item.validation.valid ? 'teal' : 'red'} variant="light">
-                    {item.validation.valid ? 'valid' : 'invalid'}
+                    {item.validation.valid ? t('instr.valid') : t('instr.invalid')}
                   </Badge>
                 </span>
               </button>
             ))}
             {!model.busy && model.items.length === 0 ? (
               <Text c="dimmed" size="sm" p="sm">
-                No managed templates in this Runtime Scope.
+                {t('instr.emptyLibrary')}
               </Text>
             ) : null}
           </Stack>
@@ -121,7 +125,7 @@ export function InstructionTemplatesWorkspace({
           {model.selectedIdentity ? (
             <Stack gap="xs" className="instruction-library-actions">
               <TextInput
-                label="Clone as"
+                label={t('instr.cloneAs')}
                 placeholder="template-copy"
                 value={copyIdentity}
                 onChange={(event) => setCopyIdentity(event.currentTarget.value)}
@@ -132,7 +136,7 @@ export function InstructionTemplatesWorkspace({
                 disabled={!copyIdentity.trim() || model.busy}
                 onClick={() => void model.clone(copyIdentity.trim()).then(() => setCopyIdentity(''))}
               >
-                Clone template
+                {t('instr.cloneTemplate')}
               </Button>
             </Stack>
           ) : null}
@@ -140,7 +144,7 @@ export function InstructionTemplatesWorkspace({
           {model.legacyAvailable ? (
             <Stack gap="xs" className="instruction-library-actions">
               <TextInput
-                label="Import legacy as"
+                label={t('instr.importLegacyAs')}
                 value={legacyIdentity}
                 onChange={(event) => setLegacyIdentity(event.currentTarget.value)}
               />
@@ -150,7 +154,7 @@ export function InstructionTemplatesWorkspace({
                 disabled={!legacyIdentity.trim() || model.busy}
                 onClick={() => void model.importLegacy(legacyIdentity.trim())}
               >
-                Import legacy template
+                {t('instr.importLegacy')}
               </Button>
             </Stack>
           ) : null}
@@ -160,25 +164,25 @@ export function InstructionTemplatesWorkspace({
           <Group justify="space-between" align="flex-start" className="instruction-pane-heading">
             <div>
               <Text className="eyebrow" size="xs">
-                {model.selectedIdentity ? 'Managed draft' : 'New managed draft'}
+                {model.selectedIdentity ? t('instr.managedDraft') : t('instr.newManagedDraft')}
               </Text>
-              <Title order={3}>{model.selectedIdentity ?? 'Untitled template'}</Title>
+              <Title order={3}>{model.selectedIdentity ?? t('instr.untitled')}</Title>
             </div>
             <Group gap="xs">
-              {selected?.protected ? <Badge variant="outline">Protected built-in</Badge> : null}
+              {selected?.protected ? <Badge variant="outline">{t('instr.protectedBuiltIn')}</Badge> : null}
               {selected ? (
                 <Badge color={valid ? 'teal' : 'red'} variant="light">
-                  {valid ? 'Valid draft' : 'Invalid draft'}
+                  {valid ? t('instr.validDraft') : t('instr.invalidDraft')}
                 </Badge>
               ) : null}
               <Badge color={model.dirty ? 'yellow' : 'gray'} variant={model.dirty ? 'light' : 'outline'}>
-                {model.dirty ? 'Unsaved changes' : 'Saved'}
+                {model.dirty ? t('instr.unsaved') : t('instr.saved')}
               </Badge>
             </Group>
           </Group>
 
           <TextInput
-            label="Template name"
+            label={t('instr.templateName')}
             value={model.draft.identity}
             disabled={Boolean(model.selectedIdentity)}
             onChange={(event) => model.changeIdentity(event.currentTarget.value)}
@@ -189,14 +193,14 @@ export function InstructionTemplatesWorkspace({
             onChange={(value) => value && model.changeSurface(value as InstructionTemplateSurface)}
           >
             <Tabs.List grow>
-              <Tabs.Tab value="initialize">Initialization</Tabs.Tab>
-              <Tabs.Tab value="cli">CLI</Tabs.Tab>
+              <Tabs.Tab value="initialize">{t('instr.initialization')}</Tabs.Tab>
+              <Tabs.Tab value="cli">{t('instr.cli')}</Tabs.Tab>
             </Tabs.List>
             {(['initialize', 'cli'] as const).map((surface) => (
               <Tabs.Panel key={surface} value={surface} pt="sm">
                 <Textarea
                   className="instruction-template-editor"
-                  aria-label={`${surface === 'cli' ? 'CLI' : 'Initialization'} template`}
+                  aria-label={surface === 'cli' ? t('instr.cliTemplate') : t('instr.initializationTemplate')}
                   autosize
                   minRows={12}
                   maxRows={24}
@@ -209,9 +213,11 @@ export function InstructionTemplatesWorkspace({
           </Tabs>
 
           {selected && !selected.validation.valid ? (
-            <Alert color="red" title="Draft validation">
+            <Alert color="red" title={t('instr.draftValidation')}>
               {selected.validation.initialization.error ? (
-                <Text size="sm">Initialization: {selected.validation.initialization.error}</Text>
+                <Text size="sm">
+                  {t('instr.initialization')}: {selected.validation.initialization.error}
+                </Text>
               ) : null}
               {selected.validation.cli.error ? <Text size="sm">CLI: {selected.validation.cli.error}</Text> : null}
             </Alert>
@@ -219,14 +225,14 @@ export function InstructionTemplatesWorkspace({
 
           <Group justify="space-between" className="instruction-editor-actions">
             <Button
-              aria-label="Delete template"
+              aria-label={t('instr.delete')}
               color="red"
               leftSection={<Trash2 size={15} />}
               variant="light"
               disabled={!model.selectedIdentity || selected?.protected || model.busy}
               onClick={() => void model.deleteSelected()}
             >
-              Delete
+              {t('instr.delete')}
             </Button>
             <Button
               leftSection={<Save size={15} />}
@@ -234,32 +240,32 @@ export function InstructionTemplatesWorkspace({
               loading={model.busy}
               onClick={() => void model.saveDraft()}
             >
-              Save draft
+              {t('instr.saveDraft')}
             </Button>
           </Group>
         </main>
 
-        <aside className="instruction-preview-pane" aria-label="Template preview">
+        <aside className="instruction-preview-pane" aria-label={t('instr.previewAria')}>
           <Group justify="space-between" className="instruction-pane-heading">
             <div>
-              <Text fw={800}>Effective preview</Text>
+              <Text fw={800}>{t('instr.effectivePreview')}</Text>
               <Text size="xs" c="dimmed">
-                {surfaceLabel(model.surface)} surface
+                {t('instr.surfaceLabel', { surface: surfaceLabel(model.surface) })}
               </Text>
             </div>
-            {model.previewStale ? <Badge color="yellow">Preview is stale</Badge> : null}
+            {model.previewStale ? <Badge color="yellow">{t('instr.previewStale')}</Badge> : null}
           </Group>
 
           <SegmentedControl
             fullWidth
-            aria-label="Preview target selection"
+            aria-label={t('instr.previewTarget')}
             value={model.selection.mode}
             onChange={(value) => model.changeSelection(defaultSelection(value))}
             data={[
-              { value: 'all', label: 'All' },
-              { value: 'preset', label: 'Preset' },
-              { value: 'tags', label: 'Tags' },
-              { value: 'tag-filter', label: 'Filter' },
+              { value: 'all', label: t('instr.selAll') },
+              { value: 'preset', label: t('instr.selPreset') },
+              { value: 'tags', label: t('instr.selTags') },
+              { value: 'tag-filter', label: t('instr.selFilter') },
             ]}
           />
           <SelectionInput selection={model.selection} onChange={model.changeSelection} />
@@ -270,7 +276,7 @@ export function InstructionTemplatesWorkspace({
             loading={model.busy}
             onClick={() => void model.previewDraft()}
           >
-            Preview {model.surface}
+            {t('instr.previewSurface', { surface: model.surface })}
           </Button>
 
           <div className="instruction-preview-output" aria-live="polite">
@@ -278,22 +284,22 @@ export function InstructionTemplatesWorkspace({
               <>
                 <Group justify="space-between">
                   <Badge color={model.preview.validation ? 'yellow' : 'teal'} variant="light">
-                    {model.preview.validation ? 'Preview failed' : 'Rendered'}
+                    {model.preview.validation ? t('instr.previewFailed') : t('instr.rendered')}
                   </Badge>
                   <Text size="xs" c="dimmed">
-                    One-shot preview
+                    {t('instr.oneShot')}
                   </Text>
                 </Group>
                 <Code block>{model.preview.rendered ?? model.preview.validation?.message ?? '(suppressed)'}</Code>
                 {model.preview.unresolvedTemplates.length > 0 ? (
-                  <Alert color="yellow" title="Context required" role="status">
-                    Unresolved Template Servers: {model.preview.unresolvedTemplates.join(', ')}
+                  <Alert color="yellow" title={t('instr.contextRequired')} role="status">
+                    {t('instr.unresolvedServers')} {model.preview.unresolvedTemplates.join(', ')}
                   </Alert>
                 ) : null}
-                <Stack gap={4} aria-label="Effective servers">
+                <Stack gap={4} aria-label={t('instr.effectiveServers')}>
                   <Group justify="space-between">
                     <Text size="xs" fw={800}>
-                      Effective servers
+                      {t('instr.effectiveServers')}
                     </Text>
                     <Badge variant="outline">{model.preview.effectiveServers.length}</Badge>
                   </Group>
@@ -306,13 +312,13 @@ export function InstructionTemplatesWorkspace({
                         {server.target.name}
                       </Text>
                       <Badge color={server.hasInstructions ? 'teal' : 'gray'} variant="light">
-                        {server.hasInstructions ? 'Instructions' : 'No instructions'}
+                        {server.hasInstructions ? t('instr.hasInstructions') : t('instr.noInstructions')}
                       </Badge>
                     </Group>
                   ))}
                   {model.preview.effectiveServers.length === 0 ? (
                     <Text size="xs" c="dimmed">
-                      No effective servers matched this selection.
+                      {t('instr.noEffectiveServers')}
                     </Text>
                   ) : null}
                 </Stack>
@@ -321,10 +327,10 @@ export function InstructionTemplatesWorkspace({
               <Stack align="center" gap={4} className="instruction-preview-empty">
                 <CheckCircle2 size={20} />
                 <Text size="sm" fw={700}>
-                  Save, then preview this surface
+                  {t('instr.saveThenPreview')}
                 </Text>
                 <Text size="xs" c="dimmed" ta="center">
-                  Changing the draft, surface, target selection, or request context expires the preview.
+                  {t('instr.previewExpires')}
                 </Text>
               </Stack>
             )}
@@ -334,14 +340,14 @@ export function InstructionTemplatesWorkspace({
             disabled={!model.selectedIdentity || model.dirty || model.busy}
             onClick={() => void model.validateDraft()}
           >
-            Validate both surfaces
+            {t('instr.validateBoth')}
           </Button>
           <Button
             leftSection={<ShieldCheck size={15} />}
             disabled={!activationReady || model.busy}
             onClick={() => void model.activate()}
           >
-            Activate template
+            {t('instr.activate')}
           </Button>
         </aside>
       </div>
@@ -350,6 +356,7 @@ export function InstructionTemplatesWorkspace({
 }
 
 function RequestContextForm({ value, onChange }: { value: string; onChange(value: string): void }) {
+  const { t } = useI18n();
   const context = parseContextFormValue(value);
   const enabled = value.trim().length > 0;
   const update = (next: Partial<typeof context>) => onChange(JSON.stringify({ ...context, ...next }));
@@ -357,7 +364,7 @@ function RequestContextForm({ value, onChange }: { value: string; onChange(value
   return (
     <Stack gap="xs">
       <Checkbox
-        label="Use explicit request context"
+        label={t('instr.useExplicitContext')}
         checked={enabled}
         onChange={(event) =>
           onChange(event.currentTarget.checked ? JSON.stringify({ project: {}, user: {}, environment: {} }) : '')
@@ -366,18 +373,18 @@ function RequestContextForm({ value, onChange }: { value: string; onChange(value
       {enabled ? (
         <>
           <TextInput
-            label="Project name"
+            label={t('instr.projectName')}
             value={context.project.name ?? ''}
             onChange={(event) => update({ project: { name: event.currentTarget.value } })}
           />
           <TextInput
-            label="User name"
+            label={t('instr.userName')}
             value={context.user.name ?? ''}
             onChange={(event) => update({ user: { name: event.currentTarget.value } })}
           />
           <TextInput
-            label="Environment prefixes"
-            description="Comma-separated"
+            label={t('instr.envPrefixes')}
+            description={t('common.commaSeparated')}
             value={(context.environment.prefixes ?? []).join(', ')}
             onChange={(event) =>
               update({
@@ -425,11 +432,12 @@ function SelectionInput({
   selection: InstructionTemplateSelection;
   onChange(selection: InstructionTemplateSelection): void;
 }) {
+  const { t } = useI18n();
   if (selection.mode === 'all') return null;
   if (selection.mode === 'preset') {
     return (
       <TextInput
-        label="Preset"
+        label={t('instr.selPreset')}
         value={selection.preset}
         onChange={(event) => onChange({ mode: 'preset', preset: event.currentTarget.value })}
       />
@@ -438,8 +446,8 @@ function SelectionInput({
   if (selection.mode === 'tags') {
     return (
       <TextInput
-        label="Tags"
-        description="Comma-separated"
+        label={t('instr.selTags')}
+        description={t('common.commaSeparated')}
         value={selection.tags.join(', ')}
         onChange={(event) =>
           onChange({
@@ -455,7 +463,7 @@ function SelectionInput({
   }
   return (
     <TextInput
-      label="Tag filter"
+      label={t('instr.tagFilter')}
       value={selection.expression}
       onChange={(event) => onChange({ mode: 'tag-filter', expression: event.currentTarget.value })}
     />

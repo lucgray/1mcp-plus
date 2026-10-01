@@ -4,6 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 
+import { useI18n } from '../i18n';
+
 export interface ConfirmationDetail {
   label: string;
   value: string;
@@ -27,6 +29,7 @@ interface PendingConfirmation extends ConfirmationRequest {
 const ConfirmationContext = createContext<Confirm | null>(null);
 
 export function ConfirmationDialogProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const [pending, setPending] = useState<PendingConfirmation | null>(null);
   const pendingRef = useRef<PendingConfirmation | null>(null);
   const queueRef = useRef<PendingConfirmation[]>([]);
@@ -111,10 +114,10 @@ export function ConfirmationDialogProvider({ children }: { children: ReactNode }
                 ) : null}
                 <Group justify="flex-end">
                   <Button ref={cancelButtonRef} variant="default" onClick={() => settle(false)}>
-                    {pending.cancelLabel ?? 'Cancel'}
+                    {pending.cancelLabel ?? t('common.cancel')}
                   </Button>
                   <Button color={pending.tone === 'danger' ? 'red' : undefined} onClick={() => settle(true)}>
-                    {pending.confirmLabel ?? 'Confirm'}
+                    {pending.confirmLabel ?? t('common.confirm')}
                   </Button>
                 </Group>
               </Stack>

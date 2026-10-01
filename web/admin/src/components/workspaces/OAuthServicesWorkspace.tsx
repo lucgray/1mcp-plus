@@ -5,6 +5,7 @@ import type { MouseEvent } from 'react';
 import { useState } from 'react';
 
 import type { OAuthServiceStatus } from '../../api/adminApi';
+import { useI18n } from '../../i18n';
 import type {
   AdminConsoleSessionModel,
   OAuthAdminAction,
@@ -21,6 +22,7 @@ export function OAuthServicesWorkspace({
   oauth: AdminConsoleSessionModel['oauth'];
   configureServer(): void | Promise<void>;
 }) {
+  const { t } = useI18n();
   const { state, configuredServers } = model;
   const services = state.status?.oauth.services ?? [];
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
@@ -28,17 +30,20 @@ export function OAuthServicesWorkspace({
   async function copyServiceId(service: OAuthServiceStatus): Promise<void> {
     try {
       await configuredServers.copy('serviceId', service.id);
-      setCopyFeedback('Service id copied.');
+      setCopyFeedback(t('oauth.serviceIdCopied'));
     } catch {
-      setCopyFeedback('Could not copy service id. Select the value manually.');
+      setCopyFeedback(t('oauth.copyFailed'));
     }
   }
 
   return (
-    <section aria-label="OAuth services" className="operations-workspace">
+    <section aria-label={t('oauth.title')} className="operations-workspace">
       <WorkspaceHeading
-        title="OAuth services"
-        description={`${services.length} reported services · runtime status ${state.status?.oauth.status ?? 'unavailable'}`}
+        title={t('oauth.title')}
+        description={t('oauth.description', {
+          count: services.length,
+          status: state.status?.oauth.status ?? t('common.unavailable'),
+        })}
       />
       {oauth.callbackFeedback ? <FeedbackAlert feedback={oauth.callbackFeedback} /> : null}
       {oauth.operationFeedback ? <FeedbackAlert feedback={oauth.operationFeedback} /> : null}
@@ -46,9 +51,9 @@ export function OAuthServicesWorkspace({
         <Paper className="operations-panel" withBorder>
           <Stack gap="sm" className="actionable-empty-state">
             <div>
-              <Text fw={800}>No OAuth services reported</Text>
+              <Text fw={800}>{t('oauth.emptyTitle')}</Text>
               <Text c="dimmed" size="sm">
-                OAuth services appear when a configured server requires provider authorization.
+                {t('oauth.emptyBody')}
               </Text>
             </div>
             <Button
@@ -61,7 +66,7 @@ export function OAuthServicesWorkspace({
                 void configureServer();
               }}
             >
-              Configure server
+              {t('oauth.configureServer')}
             </Button>
           </Stack>
         </Paper>
@@ -80,7 +85,7 @@ export function OAuthServicesWorkspace({
         </Stack>
       )}
       {copyFeedback ? (
-        <Alert aria-live="polite" color={copyFeedback.startsWith('Could not') ? 'red' : 'teal'} mt="sm">
+        <Alert aria-live="polite" color={copyFeedback === t('oauth.copyFailed') ? 'red' : 'teal'} mt="sm">
           {copyFeedback}
         </Alert>
       ) : null}
@@ -105,8 +110,9 @@ function OAuthServiceRow({
   onCopy(): void;
   onOperate(action: OAuthAdminAction): void;
 }) {
+  const { t } = useI18n();
   const action = oauthAction(service);
-  const actionLabel = action === 'authorize' ? 'Authorize' : 'Restart';
+  const actionLabel = action === 'authorize' ? t('oauth.authorize') : t('oauth.restart');
 
   return (
     <Paper component="article" className="oauth-service-row" withBorder>
@@ -119,7 +125,7 @@ function OAuthServiceRow({
             </Badge>
           </Group>
           <Text size="xs" c="dimmed">
-            {service.requiresOAuth ? 'OAuth required' : 'No OAuth action required'}
+            {service.requiresOAuth ? t('oauth.required') : t('oauth.notRequired')}
           </Text>
           {service.lastError ? (
             <Text size="sm" c="red">
@@ -127,11 +133,11 @@ function OAuthServiceRow({
             </Text>
           ) : null}
           <details className="oauth-service-identity">
-            <summary>Full service ID</summary>
+            <summary>{t('oauth.fullServiceId')}</summary>
             <Group gap="xs" wrap="nowrap">
               <Code className="oauth-service-id">{service.id}</Code>
               <Button
-                aria-label={`Copy full service ID for ${service.displayName}`}
+                aria-label={t('oauth.copyServiceId', { name: service.displayName })}
                 size="compact-xs"
                 variant="subtle"
                 onClick={onCopy}
@@ -153,7 +159,7 @@ function OAuthServiceRow({
               {actionLabel}
             </Button>
             <Text size="xs" c="dimmed" aria-live="polite">
-              {busy ? (busy === 'authorize' ? 'Starting authorization...' : 'Restarting authorization...') : ''}
+              {busy ? (busy === 'authorize' ? t('oauth.starting') : t('oauth.restarting')) : ''}
             </Text>
           </Stack>
         ) : null}

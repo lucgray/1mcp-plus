@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import type { MouseEvent } from 'react';
 
 import type { BackendLogEntry, BackendLogSource } from '../../api/adminApi';
+import { useI18n } from '../../i18n';
 import type { BackendLogsModel } from '../../session/useBackendLogs';
 
 export function BackendLogsWorkspace({
@@ -13,33 +14,34 @@ export function BackendLogsWorkspace({
   logs: BackendLogsModel;
   configureServer(): void | Promise<void>;
 }) {
+  const { t } = useI18n();
   const selected = logs.sources.find((source) => source.id === logs.selectedSourceId) ?? null;
   const hasSources = logs.sources.length > 0;
   return (
-    <section aria-label="Backend logs" className="operations-workspace backend-logs-workspace">
+    <section aria-label={t('logs.title')} className="operations-workspace backend-logs-workspace">
       <header className="workspace-heading backend-logs-heading">
         <Group justify="space-between" align="flex-end">
           <div>
             <Text className="eyebrow" size="xs">
-              Runtime diagnostics
+              {t('logs.eyebrow')}
             </Text>
-            <Title order={2}>Backend logs</Title>
+            <Title order={2}>{t('logs.title')}</Title>
           </div>
           <Badge color={connectionColor(logs.connection)} variant="light">
-            {connectionLabel(logs.connection, hasSources)}
+            {connectionLabel(logs.connection, hasSources, t)}
           </Badge>
         </Group>
       </header>
       {logs.sources.length === 0 ? (
         <div className="backend-log-empty" role="status">
           {logs.connection === 'loading' ? (
-            'Loading backend log sources...'
+            t('logs.loadingSources')
           ) : (
             <Stack gap="sm" align="center" className="actionable-empty-state">
               <div>
-                <Text fw={800}>No backend log sources</Text>
+                <Text fw={800}>{t('logs.emptyTitle')}</Text>
                 <Text c="dimmed" size="sm">
-                  Configure a stdio server to capture and inspect managed stderr here.
+                  {t('logs.emptyBody')}
                 </Text>
               </div>
               <Button
@@ -52,14 +54,14 @@ export function BackendLogsWorkspace({
                   void configureServer();
                 }}
               >
-                Configure stdio server
+                {t('logs.configureStdio')}
               </Button>
             </Stack>
           )}
         </div>
       ) : (
         <div className="backend-log-layout">
-          <nav aria-label="Backend log sources" className="backend-log-sources">
+          <nav aria-label={t('logs.sourcesNav')} className="backend-log-sources">
             {logs.sources.map((source) => (
               <SourceButton
                 key={source.id}
@@ -94,9 +96,10 @@ function SourceButton({
   unread: number;
   onSelect(): void;
 }) {
+  const { t } = useI18n();
   return (
     <UnstyledButton
-      aria-label={`${source.displayName}, ${sourceStatus(source)}`}
+      aria-label={`${source.displayName}, ${sourceStatus(source, t)}`}
       aria-current={active ? 'page' : undefined}
       className={`backend-log-source${active ? ' backend-log-source-active' : ''}`}
       onClick={onSelect}
@@ -106,7 +109,7 @@ function SourceButton({
           {source.displayName}
         </Text>
         <Text component="span" c="dimmed" size="xs">
-          {sourceStatus(source)}
+          {sourceStatus(source, t)}
         </Text>
       </span>
       {unread > 0 ? (
@@ -118,12 +121,13 @@ function SourceButton({
   );
 }
 
-function sourceStatus(source: BackendLogSource): string {
-  if (source.capture === 'not-captured') return 'Not captured';
-  return source.lifecycle === 'ended' ? 'Ended' : 'Managed stderr';
+function sourceStatus(source: BackendLogSource, t: (key: string) => string): string {
+  if (source.capture === 'not-captured') return t('logs.statusNotCaptured');
+  return source.lifecycle === 'ended' ? t('logs.statusEnded') : t('logs.statusManagedStderr');
 }
 
 function SelectedSource({ source, logs }: { source: BackendLogSource; logs: BackendLogsModel }) {
+  const { t } = useI18n();
   const entries = logs.entries;
   return (
     <>
@@ -135,16 +139,20 @@ function SelectedSource({ source, logs }: { source: BackendLogSource; logs: Back
           </Text>
         </div>
         <Badge color={source.capture === 'not-captured' ? 'red' : source.lifecycle === 'ended' ? 'orange' : 'teal'}>
-          {source.capture === 'not-captured' ? 'Unavailable' : source.lifecycle === 'ended' ? 'Ended' : 'Live'}
+          {source.capture === 'not-captured'
+            ? t('logs.badgeUnavailable')
+            : source.lifecycle === 'ended'
+              ? t('logs.statusEnded')
+              : t('logs.badgeLive')}
         </Badge>
       </Group>
       {source.capture === 'not-captured' ? (
         <div className="backend-log-empty" role="status">
-          This server sends stderr to an explicit destination, so the runtime does not capture it.
+          {t('logs.notCapturedHint')}
         </div>
       ) : logs.selectionLoading ? (
         <div className="backend-log-empty" role="status">
-          Loading retained log history...
+          {t('logs.loadingHistory')}
         </div>
       ) : logs.selectionError ? (
         <div className="backend-log-empty" role="alert">
@@ -152,12 +160,14 @@ function SelectedSource({ source, logs }: { source: BackendLogSource; logs: Back
         </div>
       ) : entries.length === 0 ? (
         <div className="backend-log-empty" role="status">
-          {source.lifecycle === 'ended'
-            ? 'This source ended without retained log entries.'
-            : 'No captured stderr in retained runtime history.'}
+          {source.lifecycle === 'ended' ? t('logs.endedEmpty') : t('logs.noStderr')}
         </div>
       ) : (
-        <div aria-label={`${source.displayName} retained log entries`} className="backend-log-well" role="log">
+        <div
+          aria-label={t('logs.retainedEntries', { name: source.displayName })}
+          className="backend-log-well"
+          role="log"
+        >
           {entries.map((entry) => (
             <LogRow key={entry.sequence} entry={entry} />
           ))}
@@ -184,11 +194,15 @@ function formatTime(timestamp: string): string {
   return Number.isNaN(date.valueOf()) ? timestamp : date.toLocaleTimeString([], { hour12: false });
 }
 
-function connectionLabel(connection: BackendLogsModel['connection'], hasSources: boolean): string {
-  if (connection === 'reconnecting') return 'Reconnecting';
-  if (connection === 'active') return hasSources ? 'Live stream' : 'Waiting for sources';
-  if (connection === 'loading') return 'Connecting';
-  return 'Inactive';
+function connectionLabel(
+  connection: BackendLogsModel['connection'],
+  hasSources: boolean,
+  t: (key: string) => string,
+): string {
+  if (connection === 'reconnecting') return t('logs.reconnecting');
+  if (connection === 'active') return hasSources ? t('logs.liveStream') : t('logs.waitingSources');
+  if (connection === 'loading') return t('logs.connecting');
+  return t('logs.inactive');
 }
 
 function connectionColor(connection: BackendLogsModel['connection']): string {

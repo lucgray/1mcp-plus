@@ -242,7 +242,7 @@ function ServerCard({
         </div>
         <div>
           <dt>{t('servers.table.secrets')}</dt>
-          <dd>{secretSummary(server)}</dd>
+          <dd>{secretSummary(server, t)}</dd>
         </div>
       </dl>
       {mutation?.message ? (
@@ -323,7 +323,7 @@ function ServerRow({
         </Badge>
       </Table.Td>
       <Table.Td>{transportSummaryLabel(server)}</Table.Td>
-      <Table.Td>{secretSummary(server)}</Table.Td>
+      <Table.Td>{secretSummary(server, t)}</Table.Td>
       <Table.Td>
         <Group gap="sm" wrap="nowrap" justify="flex-end">
           <Tooltip label={t('servers.edit', { id: server.id })}>
