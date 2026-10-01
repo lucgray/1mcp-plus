@@ -20,7 +20,7 @@ export class DashboardWindow {
       height: 840,
       minWidth: 800,
       minHeight: 560,
-      title: '1MCP Console',
+      title: '1MCP Plus Console',
       icon: this.iconPath,
       autoHideMenuBar: true,
       webPreferences: {

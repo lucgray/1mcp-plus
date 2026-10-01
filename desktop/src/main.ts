@@ -52,11 +52,17 @@ function registerIpc(): void {
       case 'open-dashboard':
         dashboard.show();
         break;
+      case 'hide-quickview':
+        tray?.hideQuickView();
+        break;
       case 'quit':
         quit();
         break;
     }
     poller.refresh();
+  });
+  ipcMain.on('app:quickview-height', (event, height: number) => {
+    tray?.resizeQuickView(event.sender, height);
   });
 }
 
