@@ -58,6 +58,12 @@ export class TrayController {
     this.quickView?.hide();
   }
 
+  /** True when a StatusNotifier/host gave the icon real screen bounds. */
+  hasTrayHost(): boolean {
+    const bounds = this.tray?.getBounds();
+    return !!bounds && (bounds.width > 0 || bounds.height > 0);
+  }
+
   toggleQuickView(): void {
     if (this.quickView?.isVisible()) {
       this.hideQuickView();
