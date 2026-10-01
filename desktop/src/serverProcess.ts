@@ -181,7 +181,9 @@ export class ServerProcess extends EventEmitter {
     }
     this.expectedExit = true;
     this.setState('stopping');
-    child.once('exit', () => this.setState('stopped'));
+    // The child's own exit listener turns an expected exit into 'stopped';
+    // adding another listener here would race restart(), whose exit handler
+    // respawns and must leave the state at 'starting'.
     child.kill('SIGTERM');
     setTimeout(() => {
       if (this.child === child && !child.killed) {

@@ -5,6 +5,10 @@ import type { HealthResponse, McpHealthResponse, StatusSnapshot } from './types'
 
 const POLL_INTERVAL_MS = 5000;
 const REQUEST_TIMEOUT_MS = 4000;
+// /health and /health/mcp share a per-IP rate limit; on-demand refreshes
+// (quick view opening, control actions) reuse a recent snapshot instead of
+// issuing another request pair.
+const MIN_FETCH_INTERVAL_MS = 4000;
 
 async function getJson<T>(url: string): Promise<T | undefined> {
   const controller = new AbortController();
@@ -26,6 +30,7 @@ export class StatusPoller extends EventEmitter {
   private timer?: NodeJS.Timeout;
   private polling = false;
   private latest?: StatusSnapshot;
+  private lastFetchAt = 0;
 
   constructor(private readonly server: ServerProcess) {
     super();
@@ -60,6 +65,10 @@ export class StatusPoller extends EventEmitter {
 
   /** Refresh immediately (e.g. when the quick view opens). */
   refresh(): void {
+    if (Date.now() - this.lastFetchAt < MIN_FETCH_INTERVAL_MS) {
+      this.emit('status', this.snapshot);
+      return;
+    }
     void this.pollOnce();
   }
 
@@ -81,6 +90,7 @@ export class StatusPoller extends EventEmitter {
         return;
       }
 
+      this.lastFetchAt = Date.now();
       const [health, mcp] = await Promise.all([
         getJson<HealthResponse>(`${this.server.endpoint}/health`),
         getJson<McpHealthResponse>(`${this.server.endpoint}/health/mcp`),

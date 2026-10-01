@@ -85,6 +85,10 @@ export class TrayController {
   destroy(): void {
     this.quickView?.destroy();
     this.tray?.destroy();
+    // Cleared references keep updateStatus()/rebuildMenu() a no-op while the
+    // managed server still emits shutdown logs during quit.
+    this.quickView = undefined;
+    this.tray = undefined;
   }
 
   private ensureQuickView(): BrowserWindow {
