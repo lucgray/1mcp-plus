@@ -102,17 +102,9 @@ export function AdminConsoleApp({ session }: AdminConsoleAppProps) {
                 size="sm"
                 onClick={() => setMobileNavigationOpened((opened) => !opened)}
               />
-              <div className="brand-mark" aria-hidden="true">
-                1
-              </div>
-              <div className="command-brand-copy">
-                <Text className="eyebrow command-eyebrow" size="xs">
-                  1MCP control plane
-                </Text>
-                <Title order={1} size="h4">
-                  Admin Console
-                </Title>
-              </div>
+              <Title order={1} size="h4">
+                Admin Console
+              </Title>
             </Group>
             <Group gap="xs" wrap="nowrap" className="global-actions">
               <div className="runtime-live" aria-label="Runtime online">

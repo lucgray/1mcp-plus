@@ -135,35 +135,14 @@ input {
   color: #f3f5f2;
 }
 
-.brand-mark {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--admin-teal);
-  color: white;
-  font-weight: 900;
-}
-
-.command-eyebrow {
-  color: var(--admin-muted);
-}
-
 .runtime-live {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 9px;
-  border: 1px solid #cfe0d9;
-  border-radius: 6px;
-  background: #edf7f2;
   color: #246653;
 }
 
 [data-mantine-color-scheme='dark'] .runtime-live {
-  border-color: #356b58;
-  background: var(--admin-teal-soft);
   color: #a8dcc8;
 }
 
@@ -224,7 +203,6 @@ input {
 .nav-item-active {
   background: var(--admin-graphite-soft);
   color: #ffffff;
-  box-shadow: inset 3px 0 0 var(--admin-teal);
 }
 
 .nav-runtime-card {
@@ -1069,7 +1047,6 @@ input {
     padding-inline: 12px !important;
   }
 
-  .command-eyebrow,
   .runtime-live,
   .global-view-badge,
   .operator-name {
