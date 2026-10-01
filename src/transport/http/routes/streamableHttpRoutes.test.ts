@@ -1,6 +1,7 @@
 import { ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 
 import { STREAMABLE_HTTP_ENDPOINT } from '@src/constants.js';
+import { SchemaBoundaryError } from '@src/core/validation/schemaBoundary.js';
 import {
   StreamableSessionLifecycle,
   StreamableSessionMissingReason,
@@ -131,6 +132,7 @@ describe('Streamable HTTP Routes', () => {
     mockResponse = {
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
       write: vi.fn().mockReturnThis(),
       end: vi.fn().mockReturnThis(),
       writeHead: vi.fn().mockReturnThis(),
@@ -505,6 +507,35 @@ describe('Streamable HTTP Routes', () => {
           }),
         }),
       );
+    });
+
+    it('should return 503 for retryable schema boundary failures', async () => {
+      const cause = new SchemaBoundaryError('schema_evaluation_timeout', true, 'admission');
+      mockLifecycle.resolvePostSession.mockRejectedValue(new Error('Creation failed', { cause }));
+
+      mockRequest.headers = {};
+      await postHandler(mockRequest, mockResponse);
+
+      expect(mockResponse.set).toHaveBeenCalledWith('Retry-After', '2');
+      expect(mockResponse.status).toHaveBeenCalledWith(503);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({
+            code: ErrorCode.InternalError,
+            message: expect.stringContaining('schema_evaluation_timeout'),
+          }),
+        }),
+      );
+    });
+
+    it('should return 500 for non-retryable schema boundary failures', async () => {
+      const cause = new SchemaBoundaryError('schema_invalid', false, 'admission');
+      mockLifecycle.resolvePostSession.mockRejectedValue(new Error('Creation failed', { cause }));
+
+      mockRequest.headers = {};
+      await postHandler(mockRequest, mockResponse);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
     });
   });
 

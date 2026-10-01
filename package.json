@@ -1,7 +1,7 @@
 {
-  "name": "@1mcp/agent",
+  "name": "1mcp-plus",
   "version": "0.39.0-beta.1",
-  "description": "One MCP server to aggregate them all - A unified Model Context Protocol server implementation",
+  "description": "1MCP Plus - A community fork of 1MCP: one MCP server to aggregate them all, plus a desktop tray app",
   "keywords": [
     "mcp",
     "mcp-server",
@@ -17,16 +17,16 @@
     "typescript"
   ],
   "author": "William Xu <xuzp@1mcp.app>",
-  "homepage": "https://github.com/1mcp-app/agent",
+  "homepage": "https://github.com/lucgray/1mcp-plus",
   "documentation": "https://docs.1mcp.app",
   "bugs": {
-    "url": "https://github.com/1mcp-app/agent/issues"
+    "url": "https://github.com/lucgray/1mcp-plus/issues"
   },
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.33.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/1mcp-app/agent.git"
+    "url": "git+https://github.com/lucgray/1mcp-plus.git"
   },
   "publishConfig": {
     "access": "public"

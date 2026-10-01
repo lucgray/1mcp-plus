@@ -1,8 +1,8 @@
 {
-  "name": "@1mcp/desktop",
+  "name": "1mcp-plus-desktop",
   "private": true,
   "version": "0.1.0",
-  "description": "Desktop tray app for the 1MCP agent runtime",
+  "description": "Desktop tray app for 1MCP Plus",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -18,8 +18,8 @@
     "typescript": "^5.3.3"
   },
   "build": {
-    "appId": "app.1mcp.desktop",
-    "productName": "1MCP",
+    "appId": "app.1mcp-plus.desktop",
+    "productName": "1MCP Plus",
     "directories": {
       "output": "release"
     },
