@@ -83,7 +83,10 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    tray?.showQuickView();
+    dashboard.show();
+    if (tray?.hasTrayHost()) {
+      tray.showQuickView();
+    }
   });
 
   app.whenReady().then(() => {
@@ -104,6 +107,18 @@ if (!gotLock) {
       quickViewHtml,
     );
     tray.init();
+
+    // Both forms coexist: the tray gives quick status access while the console
+    // window is the normal-app entry point (also the only UI on tray-less
+    // desktops). Wait for the server so the dashboard never loads a dead URL.
+    const showConsoleWhenReady = () => {
+      if (server.state === 'running' || server.state === 'failed') {
+        dashboard.show();
+      } else {
+        setTimeout(showConsoleWhenReady, 2000).unref();
+      }
+    };
+    setTimeout(showConsoleWhenReady, 1500).unref();
 
     server.on('state', () => {
       poller.refresh();
@@ -129,7 +144,11 @@ if (!gotLock) {
   });
 
   app.on('window-all-closed', () => {
-    // Tray app: keep running with no windows.
+    // Tray app: keep running with no windows. Without a tray host the console
+    // window is the only entry point, so closing it exits the app.
+    if (!quitting && !tray?.hasTrayHost()) {
+      quit();
+    }
   });
 
   app.on('before-quit', () => {
